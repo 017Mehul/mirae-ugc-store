@@ -10,7 +10,7 @@ const products=[
   ['Linen Co-ord Set','₹2,799','CO-ORD SETS','product-5.jpg']
 ];
 const state={cart:[],wish:[],filter:'all'};
-const asset=name=>`/ugc/assets/${name}`;
+const asset=name=>`/${name}`;
 function renderCategories(){
   $('#categories').innerHTML=categories.map(([name,image])=>`<div class="category-wrap"><button class="category" data-category="${name}" aria-label="Shop ${name}"><img src="${asset(image)}" alt="${name}"></button><span>${name}</span></div>`).join('');
 }
