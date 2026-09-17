@@ -1,18 +1,31 @@
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
-const categories=['DRESSES','TOPS','CO-ORD SETS','JACKETS','ACCESSORIES','LOUNGEWEAR'];
-const products=[['Linen Maxi Dress','₹2,499','DRESSES'],['Floral Wrap Dress','₹2,499','DRESSES'],['Satin Cowl Top','₹1,499','TOPS'],['Pleated Midi Skirt','₹1,899','SKIRTS'],['Linen Co-ord Set','₹2,799','CO-ORD SETS']];
+const categories=[
+  ['DRESSES','cat-dresses.jpg'],['TOPS','cat-tops.jpg'],['CO-ORD SETS','cat-coord.jpg'],['JACKETS','cat-jackets.jpg'],['ACCESSORIES','cat-accessories.jpg'],['LOUNGEWEAR','cat-lounge.jpg']
+];
+const products=[
+  ['Linen Maxi Dress','₹2,499','DRESSES','product-1.jpg'],
+  ['Floral Wrap Dress','₹2,499','DRESSES','product-2.jpg'],
+  ['Satin Cowl Top','₹1,499','TOPS','product-3.jpg'],
+  ['Pleated Midi Skirt','₹1,899','SKIRTS','product-4.jpg'],
+  ['Linen Co-ord Set','₹2,799','CO-ORD SETS','product-5.jpg']
+];
 const state={cart:[],wish:[],filter:'all'};
-function renderCategories(){ $('#categories').innerHTML=categories.map(c=>`<div class="category-wrap"><button class="category" data-category="${c}"><img src="/ugc/assets/categories.svg" alt="${c}"></button><span>${c}</span></div>`).join('');}
-function renderProducts(){ $('#products').innerHTML=products.filter(p=>state.filter==='all'||p[2]===state.filter).map((p,i)=>`<article class="product"><button class="heart" data-wish="${i}">${state.wish.includes(i)?'♥':'♡'}</button><div class="product-image"><img src="/ugc/assets/products.svg" alt="${p[0]}"></div><h3>${p[0]}</h3><p class="price">${p[1]}</p><div class="swatches"><i></i><i></i><i></i></div><button class="primary" data-add="${i}" style="padding:8px 10px;margin:0 4px">ADD TO BAG</button></article>`).join('')||'<p>No pieces in this collection yet.</p>';}
+const asset=name=>`/ugc/assets/${name}`;
+function renderCategories(){
+  $('#categories').innerHTML=categories.map(([name,image])=>`<div class="category-wrap"><button class="category" data-category="${name}" aria-label="Shop ${name}"><img src="${asset(image)}" alt="${name}"></button><span>${name}</span></div>`).join('');
+}
+function renderProducts(){
+  $('#products').innerHTML=products.filter(p=>state.filter==='all'||p[2]===state.filter).map((p,i)=>`<article class="product"><button class="heart" data-wish="${i}" aria-label="Add ${p[0]} to wishlist">${state.wish.includes(i)?'♥':'♡'}</button><div class="product-image"><img src="${asset(p[3])}" alt="${p[0]}" loading="lazy"></div><h3>${p[0]}</h3><p class="price">${p[1]}</p><div class="swatches"><i></i><i></i><i></i></div><button class="primary" data-add="${i}" style="padding:8px 10px;margin:0 4px">ADD TO BAG</button></article>`).join('')||'<p>No pieces in this collection yet.</p>';
+}
 function openModal(title,body){$('#modal-content').innerHTML=`<h2>${title}</h2><p>${body}</p>`;$('#overlay').hidden=false}
 function updateCart(){ $('#cart-count').textContent=state.cart.length; $('#cart-items').innerHTML=state.cart.length?state.cart.map(i=>`<p>${products[i][0]} — ${products[i][1]}</p>`).join(''):'<p>Your bag is empty.</p>';$('#cart-total').textContent='₹'+state.cart.reduce((s,i)=>s+Number(products[i][1].replace(/[^0-9]/g,'')),0).toLocaleString('en-IN');}
 function showCart(){ $('#drawer').classList.add('open');updateCart();}
 document.addEventListener('click',e=>{const t=e.target.closest('button,a');if(!t)return;
  if(t.dataset.add!==undefined){state.cart.push(+t.dataset.add);updateCart();showCart();}
  if(t.dataset.wish!==undefined){const i=+t.dataset.wish;state.wish=state.wish.includes(i)?state.wish.filter(x=>x!==i):[...state.wish,i];renderProducts();}
- if(t.dataset.category){state.filter=t.dataset.category;renderProducts();document.querySelector('#new').scrollIntoView();}
- if(t.dataset.filter){state.filter='all';renderProducts();document.querySelector('#new').scrollIntoView();}
- if(t.dataset.scroll){document.querySelector(t.dataset.scroll).scrollIntoView();}
+ if(t.dataset.category){state.filter=t.dataset.category;renderProducts();document.querySelector('#new').scrollIntoView({behavior:'smooth'});}
+ if(t.dataset.filter){state.filter='all';renderProducts();document.querySelector('#new').scrollIntoView({behavior:'smooth'});}
+ if(t.dataset.scroll){document.querySelector(t.dataset.scroll).scrollIntoView({behavior:'smooth'});}
  if(t.dataset.action==='search')openModal('Find your style','Search is ready — try “linen”, “dresses”, or “tops”. <input placeholder="Search products…">');
  if(t.dataset.action==='account')openModal('Welcome to MIRAE','Sign in to save your wishlist and track orders. <input placeholder="Email address" type="email"><button class="primary">CONTINUE</button>');
  if(t.dataset.action==='wishlist')openModal('Your Wishlist',state.wish.length?state.wish.map(i=>products[i][0]).join('<br>'):'Your wishlist is waiting for a little love ♡');
