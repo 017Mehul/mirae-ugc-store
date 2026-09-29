@@ -1,3 +1,2 @@
 User-agent: *
 Allow: /
-Sitemap: https://mirae-ugc-store.vercel.app/sitemap.xml
