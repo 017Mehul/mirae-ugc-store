@@ -7,16 +7,24 @@ on:
     branches: ["main"]
 
 jobs:
-  checks:
+  smoke:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
           node-version: 20
+
       - name: Check JavaScript syntax
+        shell: bash
         run: |
-          node --check ugc/app.js
-          for f in api/*.js api/_lib/*.js; do node --check "$f"; done
+          set -euo pipefail
+          find . -type f -name '*.js' -not -path './node_modules/*' -print0 |
+            xargs -0 -n1 node --check
+
       - name: Run storefront smoke test
-        run: python scripts/smoke-test.py
+        run: node scripts/smoke-test.js
