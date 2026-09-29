@@ -1,24 +1,26 @@
 # MIRAE — Fashion & UGC Storefront
 
-A polished, responsive fashion storefront inspired by the Miraé aesthetic, built as a lightweight static web experience with interactive shopping features.
+A polished, responsive fashion storefront built as a lightweight static web experience with interactive shopping features.
 
 ## Features
 
 - Editorial fashion-focused landing page
-- Responsive desktop and mobile layouts
+- Responsive desktop, tablet and mobile layouts
 - Shop-by-category browsing
 - New-arrivals product grid
-- Product detail modal
-- Add-to-bag shopping cart
-- Persistent cart using LocalStorage
-- Wishlist with persistent state
+- Product detail modal with size selection
+- Add-to-bag shopping cart with quantities
+- Persistent cart and wishlist using LocalStorage
 - Product search
-- Account/sign-in demo flow
+- Demo account/sign-in flow
 - Journal/article modals
-- Contact/support form demo
-- Newsletter subscription interaction
+- Demo contact/support form
+- Newsletter interaction
 - Mobile navigation
 - Interactive hero carousel
+- SEO metadata, Open Graph and Twitter cards
+- Sitemap, robots.txt and SVG favicon
+- Keyboard-friendly modal dismissal and visible focus states
 - Vercel-ready static deployment
 
 ## Tech Stack
@@ -27,7 +29,7 @@ HTML5 · CSS3 · Vanilla JavaScript · LocalStorage · Google Fonts · Vercel
 
 ## Run locally
 
-No build step is required. Serve the repository with any static server, for example:
+No build step is required:
 
     python -m http.server 8000
 
@@ -35,11 +37,28 @@ Then open http://localhost:8000.
 
 ## Deployment
 
-The repository is configured for Vercel and can be deployed directly from GitHub.
+The repository can be deployed directly to Vercel or any static hosting provider.
 
-## Project notes
+## Production scope
 
-This is a frontend demonstration storefront. Cart and wishlist state are persisted locally in the browser. Authentication, payments, order management, and backend persistence are represented as demo flows and can be connected to production services later.
+This repository is intentionally a **frontend demonstration storefront**.
+
+Cart and wishlist data are persisted locally in the browser. Authentication, payments, orders, inventory, newsletter delivery and backend persistence are demo flows and are **not represented as production services**.
+
+For a real store, connect a secure backend and payment provider. Private credentials must remain server-side.
+
+## Project structure
+
+    .
+    ├── index.html
+    ├── favicon.svg
+    ├── robots.txt
+    ├── sitemap.xml
+    ├── ugc/
+    │   ├── app.js
+    │   ├── styles.css
+    │   └── assets/
+    └── *.jpg
 
 ## Author
 
