@@ -9,6 +9,10 @@ module.exports = async function handler(req, res) {
 
   try {
     const db = getSupabaseAdmin();
+    const token = String(req.headers.authorization || "").replace(/^Bearer\\s+/i,"");
+    let userId = null;
+    let customerEmail = req.body?.customer_email || null;
+    if (token) { const auth = await db.auth.getUser(token); if (auth.data?.user) { userId = auth.data.user.id; customerEmail = auth.data.user.email || customerEmail; } }
     const ids = [...new Set(items.map(x => x.product_id).filter(Boolean))];
     const { data: products, error } = await db.from("products").select("id,name,price_inr,active").in("id", ids).eq("active", true);
     if (error) throw error;
@@ -33,7 +37,7 @@ module.exports = async function handler(req, res) {
     const order = await razorpay.orders.create({ amount:amount*100, currency:"INR", receipt:"mirae_"+Date.now(), notes:{ source:"mirae-store" } });
 
     const { data: dbOrder, error: orderError } = await db.from("orders").insert({
-      razorpay_order_id:order.id, status:"pending", total_inr:amount, customer_email:req.body?.customer_email || null
+      razorpay_order_id:order.id, user_id:userId, status:"pending", total_inr:amount, customer_email:customerEmail
     }).select("id").single();
     if (orderError) throw orderError;
     const { error: itemsError } = await db.from("order_items").insert(normalized.map(x=>({
