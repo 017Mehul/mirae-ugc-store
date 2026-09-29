@@ -1,0 +1,9 @@
+{
+  "name":"mirae-ugc-store",
+  "private":true,
+  "version":"2.0.0",
+  "description":"MIRAE portfolio storefront with production-ready API integrations.",
+  "engines":{"node":">=20"},
+  "scripts":{"check":"node --check ugc/app.js && python scripts/smoke-test.py"},
+  "dependencies":{"@supabase/supabase-js":"^2.57.0","razorpay":"^2.9.6"}
+}
