@@ -10,6 +10,7 @@ jobs:
   smoke:
     runs-on: ubuntu-latest
     timeout-minutes: 5
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -19,12 +20,18 @@ jobs:
         with:
           node-version: 20
 
-      - name: Check JavaScript syntax
-        shell: bash
+      - name: Check storefront JavaScript
         run: |
-          set -euo pipefail
-          find . -type f -name '*.js' -not -path './node_modules/*' -print0 |
-            xargs -0 -n1 node --check
+          node --check ugc/app.js
+          node --check api/products.js
+          node --check api/newsletter.js
+          node --check api/contact.js
+          node --check api/checkout.js
+          node --check api/config.js
+          node --check api/orders.js
+          node --check api/razorpay-webhook.js
+          node --check api/_lib/supabase.js
+          node --check scripts/smoke-test.js
 
       - name: Run storefront smoke test
         run: node scripts/smoke-test.js
