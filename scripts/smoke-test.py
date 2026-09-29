@@ -2,21 +2,12 @@ from pathlib import Path
 
 root = Path(__file__).resolve().parents[1]
 required = [
-    "index.html",
-    "ugc/app.js",
-    "ugc/styles.css",
-    "favicon.svg",
-    "robots.txt",
-    "hero-photo.jpg",
-    "editorial.jpg",
-    "journal-1.jpg",
-    "journal-2.jpg",
-    "journal-3.jpg",
-    "product-1.jpg",
-    "product-2.jpg",
-    "product-3.jpg",
-    "product-4.jpg",
-    "product-5.jpg",
+    "index.html","ugc/app.js","ugc/styles.css","favicon.svg","robots.txt",
+    "hero-photo.jpg","editorial.jpg","journal-1.jpg","journal-2.jpg","journal-3.jpg",
+    "product-1.jpg","product-2.jpg","product-3.jpg","product-4.jpg","product-5.jpg",
+    "package.json",".env.example","vercel.json","supabase/schema.sql",
+    "api/products.js","api/newsletter.js","api/contact.js","api/checkout.js",
+    "api/config.js","api/orders.js","api/razorpay-webhook.js"
 ]
 missing = [p for p in required if not (root / p).exists()]
 if missing:
@@ -30,4 +21,4 @@ for marker in ['id="products"', 'id="categories"', 'id="cart-items"', 'src="/ugc
     if marker not in index:
         raise SystemExit(f"Required storefront marker missing: {marker}")
 
-print("MIRAE smoke checks passed.")
+print("MIRAE production smoke checks passed.")
