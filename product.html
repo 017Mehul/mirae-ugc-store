@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="MIRAE product detail">
+<meta name="robots" content="index,follow"><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="/ugc/styles.css">
+<title>MIRAE — Product</title></head><body>
+<header class="header"><a class="brand" href="/" aria-label="MIRAE home">MIR<span>A</span>É<small>STYLE A KINDER YOU</small></a><nav class="nav right" aria-label="Product navigation"><a href="/#new">SHOP</a><a href="/#about">ABOUT</a></nav></header>
+<main class="product-detail-page section"><a href="/#new" class="text-button">← BACK TO SHOP</a><div id="product-detail"><p>Loading product…</p></div></main>
+<footer><div><div class="footer-brand">MIR<span>A</span>É</div><p>Style a kinder you.</p></div><div><b>SHOP</b><a href="/#new">New Arrivals</a><a href="/#shop">Categories</a></div><div><b>HELP</b><a href="/#footer">Contact</a></div></footer>
+<script>
+const root=document.getElementById('product-detail');
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+(async()=>{try{
+ const slug=new URLSearchParams(location.search).get('slug'); if(!slug)throw new Error('Product not found.');
+ const r=await fetch('/api/products'); if(!r.ok)throw new Error('Product service is not configured.');
+ const {products=[]}=await r.json(); const p=products.find(x=>x.slug===slug); if(!p)throw new Error('Product not found.');
+ document.title='MIRAE — '+p.name; document.querySelector('meta[name="description"]').content=p.description;
+ root.innerHTML='<div class="product-detail-grid"><div><img class="modal-product-image" src="'+esc(p.images?.[0]||'/product-1.jpg')+'" alt="'+esc(p.name)+'"></div><div><p class="eyebrow">'+esc(p.category)+'</p><h1>'+esc(p.name)+'</h1><h2>₹'+Number(p.price_inr).toLocaleString('en-IN')+'</h2><p>'+esc(p.description)+'</p><hr><h3>Available sizes</h3><p>'+esc((p.available_sizes||[]).join(' · '))+'</p><p class="text-button">Inventory and checkout are handled securely through the production API.</p></div></div>';
+ const ld={"@context":"https://schema.org","@type":"Product",name:p.name,description:p.description,image:p.images||[],offers:{"@type":"Offer",priceCurrency:"INR",price:p.price_inr,availability:p.active?"https://schema.org/InStock":"https://schema.org/OutOfStock"}};
+ const script=document.createElement('script');script.type='application/ld+json';script.textContent=JSON.stringify(ld);document.head.appendChild(script);
+}catch(e){root.innerHTML='<h1>Product unavailable</h1><p>'+esc(e.message)+'</p><a class="text-button" href="/#new">Return to shop →</a>'}})();
+</script></body></html>
