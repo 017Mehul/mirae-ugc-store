@@ -1,19 +1,6 @@
-# OS
-.DS_Store
-Thumbs.db
-
-# Editors
-.vscode/
-.idea/
-*.swp
-
-# Local environment
+node_modules/
 .env
 .env.*
 !.env.example
-
-# Build / deployment artifacts
-node_modules/
-dist/
-build/
 .vercel/
+.DS_Store
