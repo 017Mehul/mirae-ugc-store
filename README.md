@@ -19,7 +19,7 @@ A polished, responsive fashion storefront built as a lightweight static web expe
 - Mobile navigation
 - Interactive hero carousel
 - SEO metadata, Open Graph and Twitter cards
-- Sitemap, robots.txt and SVG favicon
+- Robots directives and SVG favicon
 - Keyboard-friendly modal dismissal and visible focus states
 - Vercel-ready static deployment
 
@@ -53,8 +53,7 @@ For a real store, connect a secure backend and payment provider. Private credent
     ├── index.html
     ├── favicon.svg
     ├── robots.txt
-    ├── sitemap.xml
-    ├── ugc/
+        ├── ugc/
     │   ├── app.js
     │   ├── styles.css
     │   └── assets/
