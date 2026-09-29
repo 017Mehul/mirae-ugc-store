@@ -53,7 +53,12 @@ For a real store, connect a secure backend and payment provider. Private credent
     ├── index.html
     ├── favicon.svg
     ├── robots.txt
-        ├── ugc/
+    ├── scripts/
+    │   └── smoke-test.py
+    ├── .github/
+    │   └── workflows/
+    │       └── storefront.yml
+    ├── ugc/
     │   ├── app.js
     │   ├── styles.css
     │   └── assets/
