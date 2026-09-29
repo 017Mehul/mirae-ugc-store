@@ -41,8 +41,9 @@ async function loadProducts(){
   }
  }catch{}
 }
-async function postJSON(url,payload){
- const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json'},body:JSON.stringify(payload)});
+async function postJSON(url,payload,token){
+ const headers={'Content-Type':'application/json',Accept:'application/json'};if(token)headers.Authorization=`Bearer ${token}`;
+ const r=await fetch(url,{method:'POST',headers,body:JSON.stringify(payload)});
  const data=await r.json().catch(()=>({}));
  if(!r.ok)throw new Error(data.error||'Request failed.');
  return data;
@@ -86,7 +87,7 @@ async function startCheckout(){
  $('#drawer').classList.remove('open');
  openModal('Checkout',`<p>${n} item(s) in your bag.</p><p id="checkout-message">Preparing secure checkout…</p>`);
  try{
-  const data=await postJSON('/api/checkout',{items:state.cart.map(x=>({product_id:products[x.i][6],quantity:x.qty,size:x.size}))});
+  const session=await currentSession();const data=await postJSON('/api/checkout',{items:state.cart.map(x=>({product_id:products[x.i][6],quantity:x.qty,size:x.size})),customer_email:session?.user?.email||null},session?.access_token);
   if(!data.orderId||!data.keyId)throw new Error('Payment service is not configured.');
   const script=document.createElement('script');script.src='https://checkout.razorpay.com/v1/checkout.js';script.onload=()=>{
    const rzp=new Razorpay({key:data.keyId,amount:data.amount*100,currency:data.currency,name:'MIRAE',description:'MIRAE fashion order',order_id:data.orderId,handler:()=>{openModal('Payment received','<p>Your payment was handed to the payment provider. Configure server-side signature verification and order creation before accepting live payments.</p>')}});
