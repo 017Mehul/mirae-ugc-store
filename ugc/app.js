@@ -1,6 +1,6 @@
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const categories=[['DRESSES','cat-dresses.jpg'],['TOPS','cat-tops.jpg'],['CO-ORD SETS','cat-coord.jpg'],['JACKETS','cat-jackets.jpg'],['ACCESSORIES','cat-accessories.jpg'],['LOUNGEWEAR','cat-lounge.jpg']];
-const products=[
+let products=[
  ['Linen Maxi Dress','₹2,499','DRESSES','product-1.jpg','Lightweight linen with an effortless everyday silhouette.',['S','M','L','XL']],
  ['Floral Wrap Dress','₹2,499','DRESSES','product-2.jpg','A feminine floral wrap dress made for sunny days.',['S','M','L','XL']],
  ['Satin Cowl Top','₹1,499','TOPS','product-3.jpg','A fluid satin top with an elegant cowl neckline.',['S','M','L']],
@@ -13,6 +13,29 @@ const readJSON=(key,fallback)=>{try{const v=JSON.parse(localStorage.getItem(key)
 const normalizeCart=items=>Array.isArray(items)?items.map(x=>typeof x==='number'?{i:x,size:'M',qty:1}:x).filter(x=>x&&Number.isInteger(x.i)&&x.i>=0&&x.i<products.length&&typeof x.size==='string'&&products[x.i][5].includes(x.size)&&Number.isInteger(x.qty)&&x.qty>0):[];
 const storedWish=readJSON('mirae-wish',[]);const state={cart:normalizeCart(readJSON('mirae-cart',[])),wish:Array.isArray(storedWish)?storedWish.filter(i=>Number.isInteger(i)&&i>=0&&i<products.length):[],filter:'all'};
 let lastFocus=null;
+const productionProducts=rows=>rows.map(p=>[
+ p.name, `₹${Number(p.price_inr).toLocaleString('en-IN')}`, String(p.category||'').toUpperCase(),
+ Array.isArray(p.images)&&p.images[0]?p.images[0]: 'product-1.jpg', p.description||'', Array.isArray(p.available_sizes)&&p.available_sizes.length?p.available_sizes:['S','M','L'], p.id
+]);
+async function loadProducts(){
+ try{
+  const r=await fetch('/api/products',{headers:{Accept:'application/json'}});
+  if(!r.ok)return;
+  const data=await r.json();
+  if(Array.isArray(data.products)&&data.products.length){
+   products=productionProducts(data.products);
+   state.cart=normalizeCart(state.cart);
+   state.wish=state.wish.filter(i=>i<products.length);
+   renderProducts();updateCart();
+  }
+ }catch{}
+}
+async function postJSON(url,payload){
+ const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json'},body:JSON.stringify(payload)});
+ const data=await r.json().catch(()=>({}));
+ if(!r.ok)throw new Error(data.error||'Request failed.');
+ return data;
+}
 const asset=n=>`/${n}`;
 function save(){try{localStorage.setItem('mirae-cart',JSON.stringify(state.cart));localStorage.setItem('mirae-wish',JSON.stringify(state.wish))}catch{}}
 function openModal(title,body,ready){lastFocus=document.activeElement;$('#modal-content').innerHTML=`<h2 id="modal-title">${title}</h2>${body}`;$('#overlay').hidden=false;document.body.classList.add('modal-open');ready?.();setTimeout(()=>$('#overlay .modal button,#overlay .modal input,#overlay .modal textarea')?.focus(),0)}
@@ -28,7 +51,7 @@ function showWishlist(){openModal('Your Wishlist',state.wish.map(i=>`<p><b>${pro
 function showSearch(){openModal('Find your style','<p>Search products by name or category.</p><label class="sr-only" for="search-input">Search products</label><input id="search-input" placeholder="Try linen, dresses or tops" autocomplete="off"><div id="search-results"></div>');const input=$('#search-input');const render=()=>{const q=input.value.toLowerCase();$('#search-results').innerHTML=products.map((p,i)=>({p,i})).filter(x=>`${x.p[0]} ${x.p[2]}`.toLowerCase().includes(q)).map(x=>`<p><button class="text-button" data-product="${x.i}">${x.p[0]} — ${x.p[1]}</button></p>`).join('')||'<p>No matching styles found.</p>'};input.addEventListener('input',render);render();input.focus()}
 function showAccount(){openModal('Welcome to MIRAE','<p>Sign in to save your wishlist and track orders.</p><form id="account-form"><input type="email" required autocomplete="email" placeholder="Email address"><input type="password" required minlength="4" autocomplete="current-password" placeholder="Password"><button class="primary">CONTINUE</button></form><p id="account-message"></p>');$('#account-form').addEventListener('submit',e=>{e.preventDefault();$('#account-message').textContent='Demo sign-in complete. Connect authentication for real accounts.';e.target.reset()})}
 function showJournal(i=null){openModal(i===null?'From the Journal':articles[i][0],i===null?articles.map((a,j)=>`<p><b>${a[0]}</b><br>${a[1]}<br><button class="text-button" data-article="${j}">READ ARTICLE →</button></p>`).join(''):`<p>${articles[i][1]}</p><p>Read more styling inspiration in the next MIRAE editorial edition.</p>`)}
-function showContact(){openModal('We’re here to help','<p>Our support team is happy to help.</p><form id="contact-form"><input required autocomplete="name" placeholder="Your name"><input type="email" required autocomplete="email" placeholder="Email address"><textarea required placeholder="How can we help?"></textarea><button class="primary">SEND MESSAGE</button></form><p id="contact-message"></p>');$('#contact-form').addEventListener('submit',e=>{e.preventDefault();$('#contact-message').textContent='Thanks! Your demo message was recorded locally.';e.target.reset()})}
+function showContact(){openModal('We’re here to help','<p>Our support team is happy to help.</p><form id="contact-form"><input required autocomplete="name" placeholder="Your name"><input type="email" required autocomplete="email" placeholder="Email address"><textarea required placeholder="How can we help?"></textarea><button class="primary">SEND MESSAGE</button></form><p id="contact-message"></p>');$('#contact-form').addEventListener('submit',async e=>{e.preventDefault();const m=$('#contact-message');m.textContent='Sending…';try{await postJSON('/api/contact',{name:e.target.elements[0].value,email:e.target.elements[1].value,message:e.target.elements[2].value});m.textContent='Thanks! Your message has been sent.';e.target.reset()}catch(err){m.textContent=err.message}})}
 function showMenu(){openModal('MIRAE Menu','<div class="menu-links"><button data-scroll="#new">New Arrivals</button><button data-scroll="#shop">Shop</button><button data-scroll="#collections">Collections</button><button data-scroll="#about">About</button><button data-scroll="#journal">Journal</button></div>')}
 function setHero(i){const s=heroSlides[i];if(!s)return;$('.hero h1').innerHTML=s.title.replace(/\\n/g,'<br>');$('.hero-copy>p:not(.eyebrow)').textContent=s.text;$('.hero-image img').src=s.image;$$('[data-hero]').forEach((b,n)=>b.classList.toggle('active',n===i))}
 document.addEventListener('click',e=>{const t=e.target.closest('button,a');if(!t)return;const d=t.dataset,a=d.action;if(d.action||d.filter!==undefined||d.category||d.scroll||d.product!==undefined||d.add!==undefined||d.modalAdd!==undefined||d.wish!==undefined||d.article!==undefined||d.remove!==undefined||d.qty!==undefined)e.preventDefault();
@@ -43,8 +66,21 @@ if(d.category){state.filter=d.category;renderProducts();$('#new').scrollIntoView
 if(d.filter!==undefined){state.filter='all';renderProducts();$('#new').scrollIntoView({behavior:'smooth'});return}
 if(d.scroll){closeModal();document.querySelector(d.scroll)?.scrollIntoView({behavior:'smooth'});return}
 if(d.hero!==undefined){setHero(+d.hero);return}
-if(a==='search')return showSearch();if(a==='account')return showAccount();if(a==='wishlist')return showWishlist();if(a==='journal')return showJournal();if(a==='read')return showJournal(0);if(a==='contact')return showContact();if(a==='checkout'){const n=cartCount();$('#drawer').classList.remove('open');openModal('Checkout',`<p>${n} item(s) in your bag.</p><p>This is a demo checkout screen. Connect Razorpay/Stripe and an order database for real purchases.</p><button class="primary" data-action="close">CONTINUE SHOPPING</button>`);return}if(a==='menu')return showMenu();if(a==='close')return closeModal();if(a==='cart')return showCart();if(a==='close-cart'){$('#drawer').classList.remove('open');return}});
+if(a==='search')return showSearch();if(a==='account')return showAccount();if(a==='wishlist')return showWishlist();if(a==='journal')return showJournal();if(a==='read')return showJournal(0);if(a==='contact')return showContact();if(a==='checkout')return startCheckout();if(a==='menu')return showMenu();if(a==='close')return closeModal();if(a==='cart')return showCart();if(a==='close-cart'){$('#drawer').classList.remove('open');return}});
 $('#overlay').addEventListener('click',e=>{if(e.target===$('#overlay'))closeModal()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!$('#overlay').hidden)closeModal();else $('#drawer').classList.remove('open')}});
-$('#newsletter').addEventListener('submit',e=>{e.preventDefault();openModal('You’re on the list ♡','<p>Thank you for subscribing to MIRAE updates.</p>');e.target.reset()});
-renderCategories();renderProducts();updateCart();
+async function startCheckout(){
+ const n=cartCount(); if(!n)return;
+ $('#drawer').classList.remove('open');
+ openModal('Checkout',`<p>${n} item(s) in your bag.</p><p id="checkout-message">Preparing secure checkout…</p>`);
+ try{
+  const data=await postJSON('/api/checkout',{items:state.cart.map(x=>({product_id:products[x.i][6],quantity:x.qty,size:x.size}))});
+  if(!data.orderId||!data.keyId)throw new Error('Payment service is not configured.');
+  const script=document.createElement('script');script.src='https://checkout.razorpay.com/v1/checkout.js';script.onload=()=>{
+   const rzp=new Razorpay({key:data.keyId,amount:data.amount*100,currency:data.currency,name:'MIRAE',description:'MIRAE fashion order',order_id:data.orderId,handler:()=>{openModal('Payment received','<p>Your payment was handed to the payment provider. Configure server-side signature verification and order creation before accepting live payments.</p>')}});
+   rzp.on('payment.failed',()=>{$('#checkout-message').textContent='Payment failed. Please try again.'});rzp.open();
+  };script.onerror=()=>{$('#checkout-message').textContent='Unable to load secure checkout.'};document.head.appendChild(script);
+ }catch(err){$('#checkout-message').textContent=err.message}
+}
+$('#newsletter').addEventListener('submit',async e=>{e.preventDefault();const email=e.target.elements[0].value;try{await postJSON('/api/newsletter',{email});openModal('You’re on the list ♡','<p>Thank you for subscribing to MIRAE updates.</p>');e.target.reset()}catch(err){openModal('Subscription unavailable',`<p>${err.message}</p>`)}});
+renderCategories();renderProducts();updateCart();loadProducts();
