@@ -10,8 +10,8 @@ const products=[
 const articles=[['5 Ways to Style Linen This Summer','Simple styling ideas for breathable, timeless linen pieces.'],['Wardrobe Staples You Need','The versatile essentials that make getting dressed easier.'],['Neutral Tones, Endless Possibilities','Build a calm, coordinated wardrobe with neutral shades.']];
 const heroSlides=[{title:'Confidence\\nLooks Good\\nOn You.',text:'Effortless styles for your everyday moments.',image:'/hero-photo.jpg'},{title:'Everyday\\nElegance.',text:'Timeless pieces designed for effortless styling.',image:'/editorial.jpg'},{title:'Wear Your\\nStory.',text:'Discover pieces that feel like you.',image:'/journal-1.jpg'}];
 const readJSON=(key,fallback)=>{try{const v=JSON.parse(localStorage.getItem(key)||'');return v??fallback}catch{return fallback}};
-const normalizeCart=items=>Array.isArray(items)?items.map(x=>typeof x==='number'?{i:x,size:'M',qty:1}:x).filter(x=>Number.isInteger(x.i)&&x.i>=0&&x.i<products.length&&Number.isInteger(x.qty)&&x.qty>0):[];
-const state={cart:normalizeCart(readJSON('mirae-cart',[])),wish:readJSON('mirae-wish',[]).filter(i=>Number.isInteger(i)&&i>=0&&i<products.length),filter:'all'};
+const normalizeCart=items=>Array.isArray(items)?items.map(x=>typeof x==='number'?{i:x,size:'M',qty:1}:x).filter(x=>x&&Number.isInteger(x.i)&&x.i>=0&&x.i<products.length&&typeof x.size==='string'&&products[x.i][5].includes(x.size)&&Number.isInteger(x.qty)&&x.qty>0):[];
+const storedWish=readJSON('mirae-wish',[]);const state={cart:normalizeCart(readJSON('mirae-cart',[])),wish:Array.isArray(storedWish)?storedWish.filter(i=>Number.isInteger(i)&&i>=0&&i<products.length):[],filter:'all'};
 let lastFocus=null;
 const asset=n=>`/${n}`;
 function save(){try{localStorage.setItem('mirae-cart',JSON.stringify(state.cart));localStorage.setItem('mirae-wish',JSON.stringify(state.wish))}catch{}}
@@ -35,7 +35,7 @@ document.addEventListener('click',e=>{const t=e.target.closest('button,a');if(!t
 if(d.add!==undefined){showProduct(+d.add);return}
 if(d.modalAdd!==undefined){addToCart(+d.modalAdd,$('#product-size')?.value||'M');closeModal();return}
 if(d.remove!==undefined){state.cart.splice(+d.remove,1);updateCart();return}
-if(d.qty!==undefined){const line=+d.line;state.cart[line].qty+=+d.qty;if(state.cart[line].qty<=0)state.cart.splice(line,1);updateCart();return}
+if(d.qty!==undefined){const line=+d.line;if(!state.cart[line])return;state.cart[line].qty+=+d.qty;if(state.cart[line].qty<=0)state.cart.splice(line,1);updateCart();return}
 if(d.product!==undefined){showProduct(+d.product);return}
 if(d.wish!==undefined){const i=+d.wish;state.wish=state.wish.includes(i)?state.wish.filter(x=>x!==i):[...state.wish,i];renderProducts();save();return}
 if(d.article!==undefined){showJournal(+d.article);return}
