@@ -149,3 +149,5 @@ $$;
 
 revoke all on function public.reserve_order_inventory(uuid) from public;
 revoke all on function public.release_order_inventory(uuid) from public;
+grant execute on function public.reserve_order_inventory(uuid) to service_role;
+grant execute on function public.release_order_inventory(uuid) to service_role;
