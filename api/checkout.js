@@ -9,10 +9,25 @@ module.exports = async function handler(req, res) {
 
   try {
     const db = getSupabaseAdmin();
-    const token = String(req.headers.authorization || "").replace(/^Bearer\\s+/i,"");
+    const token = String(req.headers.authorization || "").replace(/^Bearer\s+/i, "");
     let userId = null;
     let customerEmail = req.body?.customer_email || null;
-    if (token) { const auth = await db.auth.getUser(token); if (auth.data?.user) { userId = auth.data.user.id; customerEmail = auth.data.user.email || customerEmail; } }
+    if (token) {
+      const auth = await db.auth.getUser(token);
+      if (auth.data?.user) {
+        userId = auth.data.user.id;
+        customerEmail = auth.data.user.email || customerEmail;
+      }
+    }
+
+    const shipping = req.body?.shipping_address;
+    if (!shipping || !shipping.name || !shipping.phone || !shipping.address || !shipping.city || !shipping.state || !shipping.pincode) {
+      return res.status(400).json({ error: "Complete shipping details are required." });
+    }
+    if (!/^\d{10}$/.test(String(shipping.phone)) || !/^\d{6}$/.test(String(shipping.pincode))) {
+      return res.status(400).json({ error: "Enter a valid phone number and PIN code." });
+    }
+
     const ids = [...new Set(items.map(x => x.product_id).filter(Boolean))];
     const { data: products, error } = await db.from("products").select("id,name,price_inr,active").in("id", ids).eq("active", true);
     if (error) throw error;
@@ -30,6 +45,7 @@ module.exports = async function handler(req, res) {
       if (!variant || variant.stock < qty) throw new Error(`${p.name} is unavailable in size ${size || "selected"}.`);
       return { product_id:p.id, name:p.name, size, quantity:qty, unit_price_inr:Number(p.price_inr) };
     });
+
     const amount = normalized.reduce((sum,x)=>sum+x.unit_price_inr*x.quantity,0);
     if (amount <= 0) throw new Error("Invalid order amount.");
 
@@ -37,16 +53,28 @@ module.exports = async function handler(req, res) {
     const order = await razorpay.orders.create({ amount:amount*100, currency:"INR", receipt:"mirae_"+Date.now(), notes:{ source:"mirae-store" } });
 
     const { data: dbOrder, error: orderError } = await db.from("orders").insert({
-      razorpay_order_id:order.id, user_id:userId, status:"pending", total_inr:amount, customer_email:customerEmail
+      razorpay_order_id:order.id, user_id:userId, status:"pending", total_inr:amount,
+      customer_email:customerEmail, shipping_address:shipping, inventory_reserved:false,
+      reservation_expires_at:new Date(Date.now()+20*60*1000).toISOString()
     }).select("id").single();
     if (orderError) throw orderError;
+
     const { error: itemsError } = await db.from("order_items").insert(normalized.map(x=>({
       order_id:dbOrder.id, product_id:x.product_id, product_name:x.name, size:x.size,
       quantity:x.quantity, unit_price_inr:x.unit_price_inr
     })));
-    if (itemsError) throw itemsError;
+    if (itemsError) {
+      await db.from("orders").delete().eq("id",dbOrder.id);
+      throw itemsError;
+    }
 
-    return res.status(200).json({ keyId:process.env.RAZORPAY_KEY_ID, orderId:order.id, amount, currency:"INR" });
+    const { error: reserveError } = await db.rpc("reserve_order_inventory", { p_order_id: dbOrder.id });
+    if (reserveError) {
+      await db.from("orders").delete().eq("id",dbOrder.id);
+      throw new Error("One or more items went out of stock. Please refresh your bag and try again.");
+    }
+
+    return res.status(200).json({ keyId:process.env.RAZORPAY_KEY_ID, orderId:order.id, amount, currency:"INR", localOrderId:dbOrder.id });
   } catch (error) {
     return res.status(400).json({ error: error.message || "Unable to create checkout." });
   }
