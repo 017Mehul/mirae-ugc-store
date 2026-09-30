@@ -11,7 +11,7 @@ module.exports = async function handler(req, res) {
     if (error) throw error;
     res.setHeader("Cache-Control", "s-maxage=60, stale-while-revalidate=300");
     return res.status(200).json({ products: data || [] });
-  } catch (error) {
-    return res.status(503).json({ error: "Product service is not configured.", detail: error.message });
+  } catch {
+    return res.status(503).json({ error: "Product service is temporarily unavailable." });
   }
 };
