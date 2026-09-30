@@ -6,21 +6,19 @@ create table if not exists public.products (
   id uuid primary key default gen_random_uuid(),
   slug text unique not null,
   name text not null,
-  description text not null default '',
+  description text default '',
   price_inr integer not null check (price_inr >= 0),
   category text not null,
-  images text[] not null default '{}',
-  available_sizes text[] not null default '{}',
+  images jsonb not null default '[]'::jsonb,
+  available_sizes jsonb not null default '[]'::jsonb,
   active boolean not null default true,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  created_at timestamptz not null default now()
 );
 
 create table if not exists public.product_variants (
   id uuid primary key default gen_random_uuid(),
   product_id uuid not null references public.products(id) on delete cascade,
   size text not null,
-  sku text unique not null,
   stock integer not null default 0 check (stock >= 0),
   unique(product_id, size)
 );
@@ -42,12 +40,19 @@ create table if not exists public.contact_messages (
 create table if not exists public.orders (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references auth.users(id) on delete set null,
-  razorpay_order_id text unique,
-  razorpay_payment_id text,
-  status text not null default 'pending' check (status in ('pending','paid','failed','cancelled','refunded')),
-  total_inr integer not null check (total_inr >= 0),
-  customer_email text,
-  shipping_address jsonb,
+  customer_email text not null,
+  customer_name text not null,
+  phone text not null,
+  shipping_address text not null,
+  city text not null,
+  state text not null,
+  pincode text not null,
+  status text not null default 'pending',
+  payment_provider text,
+  payment_id text,
+  inventory_reserved boolean not null default false,
+  reservation_expires_at timestamptz,
+  total_inr integer not null default 0,
   created_at timestamptz not null default now()
 );
 
@@ -55,7 +60,6 @@ create table if not exists public.order_items (
   id uuid primary key default gen_random_uuid(),
   order_id uuid not null references public.orders(id) on delete cascade,
   product_id uuid references public.products(id) on delete set null,
-  product_name text not null,
   size text,
   quantity integer not null check (quantity > 0),
   unit_price_inr integer not null check (unit_price_inr >= 0)
@@ -90,7 +94,6 @@ revoke all on public.contact_messages from anon, authenticated;
 revoke all on public.orders from anon, authenticated;
 revoke all on public.order_items from anon, authenticated;
 
--- Atomic inventory reservation/release for concurrent checkout safety.
 create or replace function public.reserve_order_inventory(p_order_id uuid)
 returns void language plpgsql security definer set search_path = public as $$
 declare item record; current_stock integer;
@@ -122,9 +125,7 @@ begin
     where product_id = item.product_id and size = item.size;
   end loop;
 
-  update public.orders
-  set inventory_reserved = true
-  where id = p_order_id;
+  update public.orders set inventory_reserved = true where id = p_order_id;
 end;
 $$;
 
@@ -136,18 +137,16 @@ begin
     return;
   end if;
   for item in
-    select oi.product_id, oi.size, oi.quantity
-    from public.order_items oi where oi.order_id = p_order_id
+    select oi.product_id, oi.size, oi.quantity from public.order_items oi where oi.order_id = p_order_id
   loop
-    update public.product_variants
-    set stock = stock + item.quantity
+    update public.product_variants set stock = stock + item.quantity
     where product_id = item.product_id and size = item.size;
   end loop;
   update public.orders set inventory_reserved = false where id = p_order_id;
 end;
 $$;
 
-revoke all on function public.reserve_order_inventory(uuid) from public;
-revoke all on function public.release_order_inventory(uuid) from public;
+revoke execute on function public.reserve_order_inventory(uuid) from public, anon, authenticated;
+revoke execute on function public.release_order_inventory(uuid) from public, anon, authenticated;
 grant execute on function public.reserve_order_inventory(uuid) to service_role;
 grant execute on function public.release_order_inventory(uuid) to service_role;
