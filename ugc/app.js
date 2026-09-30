@@ -96,26 +96,18 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!$('#overlay').h
 async function startCheckout(){
  const n=cartCount(); if(!n)return;
  $('#drawer').classList.remove('open');
- openModal('Checkout','<p>'+n+' item(s) in your bag.</p><form id="checkout-form"><input name="email" type="email" required autocomplete="email" placeholder="Email address"><input name="name" required autocomplete="name" placeholder="Full name"><input name="phone" required inputmode="numeric" pattern="[0-9]{10}" autocomplete="tel" placeholder="10-digit phone"><textarea name="address" required autocomplete="street-address" placeholder="Address"></textarea><div class="checkout-row"><input name="city" required autocomplete="address-level2" placeholder="City"><input name="state" required autocomplete="address-level1" placeholder="State"></div><input name="pincode" required inputmode="numeric" pattern="[0-9]{6}" autocomplete="postal-code" placeholder="6-digit PIN"><button class="primary">PAY SECURELY →</button></form><p id="checkout-message"></p>');
+ openModal('Checkout','<p>'+n+' item(s) in your bag.</p><form id="checkout-form"><input name="email" type="email" required autocomplete="email" placeholder="Email address"><input name="name" required autocomplete="name" placeholder="Full name"><input name="phone" required inputmode="numeric" pattern="[0-9]{10}" autocomplete="tel" placeholder="10-digit phone"><textarea name="address" required autocomplete="street-address" placeholder="Address"></textarea><div class="checkout-row"><input name="city" required autocomplete="address-level2" placeholder="City"><input name="state" required autocomplete="address-level1" placeholder="State"></div><input name="pincode" required inputmode="numeric" pattern="[0-9]{6}" autocomplete="postal-code" placeholder="6-digit PIN"><button class="primary">PLACE DEMO ORDER →</button></form><p id="checkout-message"></p>');
  $('#checkout-form').addEventListener('submit',async e=>{
-  e.preventDefault();const f=e.target,m=$('#checkout-message');m.textContent='Preparing secure checkout…';
+  e.preventDefault();const f=e.target,m=$('#checkout-message');m.textContent='Creating your demo order…';
   try{
    const session=await currentSession();
    const shipping={name:f.name.value.trim(),phone:f.phone.value.trim(),address:f.address.value.trim(),city:f.city.value.trim(),state:f.state.value.trim(),pincode:f.pincode.value.trim()};
    const data=await postJSON('/api/checkout',{items:state.cart.map(x=>({product_id:products[x.i][6],quantity:x.qty,size:x.size})),customer_email:f.email.value.trim(),shipping_address:shipping},session?.access_token);
-   if(!data.orderId||!data.keyId)throw new Error('Payment service is not configured.');
-   const script=document.createElement('script');script.src='https://checkout.razorpay.com/v1/checkout.js';
-   script.onload=()=>{
-    const rzp=new Razorpay({key:data.keyId,amount:data.amount*100,currency:data.currency,name:'MIRAE',description:'MIRAE fashion order',order_id:data.orderId,handler:async response=>{
-      try{
-       await postJSON('/api/payment-verify',{localOrderId:data.localOrderId,razorpay_order_id:response.razorpay_order_id,razorpay_payment_id:response.razorpay_payment_id,razorpay_signature:response.razorpay_signature});
-       state.cart=[];save();updateCart();openModal('Order confirmed ♡','<p>Payment verified successfully.</p><p>Your MIRAE order <b>#'+String(data.localOrderId).slice(0,8)+'</b> has been placed.</p><button class="primary" data-action="account">VIEW ORDER HISTORY</button>');
-      }catch(err){openModal('Payment received','<p>Your payment was received. We are confirming the order with the payment provider.</p><p>'+err.message+'</p>')}
-    });
-    rzp.on('payment.failed',()=>{m.textContent='Payment failed. Your reserved inventory will be released by the payment webhook.'});rzp.open();
-   };
-   script.onerror=()=>{m.textContent='Unable to load secure checkout.'};document.head.appendChild(script);
+   if(!data.orderId)throw new Error('Unable to create the demo order.');
+   state.cart=[];save();updateCart();
+   openModal('Order confirmed ♡','<p>This is a portfolio demo checkout — no payment was charged.</p><p>Your MIRAE demo order <b>#'+String(data.localOrderId||data.orderId).slice(0,8)+'</b> has been placed and inventory was reserved.</p><button class="primary" data-action="account">VIEW ORDER HISTORY</button>');
   }catch(err){m.textContent=err.message}
  });
-}$('#newsletter').addEventListener('submit',async e=>{e.preventDefault();const email=e.target.elements[0].value;try{await postJSON('/api/newsletter',{email});openModal('You’re on the list ♡','<p>Thank you for subscribing to MIRAE updates.</p>');e.target.reset()}catch(err){openModal('Subscription unavailable',`<p>${err.message}</p>`)}});
+}
+$('#newsletter').addEventListener('submit',async e=>{e.preventDefault();const email=e.target.elements[0].value;try{await postJSON('/api/newsletter',{email});openModal('You’re on the list ♡','<p>Thank you for subscribing to MIRAE updates.</p>');e.target.reset()}catch(err){openModal('Subscription unavailable',`<p>${err.message}</p>`)}});
 renderCategories();renderProducts();updateCart();loadProducts();
