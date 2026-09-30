@@ -26,7 +26,7 @@ async function getSupabase(){
 async function currentSession(){const sb=await getSupabase();if(!sb)return null;const {data}=await sb.auth.getSession();return data.session||null}
 const productionProducts=rows=>rows.map(p=>[
  p.name, `₹${Number(p.price_inr).toLocaleString('en-IN')}`, String(p.category||'').toUpperCase(),
- Array.isArray(p.images)&&p.images[0]?p.images[0]: 'product-1.jpg', p.description||'', Array.isArray(p.available_sizes)&&p.available_sizes.length?p.available_sizes:['S','M','L'], p.slug || p.id
+ Array.isArray(p.images)&&p.images[0]?p.images[0]: 'product-1.jpg', p.description||'', Array.isArray(p.available_sizes)&&p.available_sizes.length?p.available_sizes:['S','M','L'], p.id, p.slug || p.id
 ]);
 async function loadProducts(){
  try{
@@ -48,7 +48,7 @@ async function postJSON(url,payload,token){
  if(!r.ok)throw new Error(data.error||'Request failed.');
  return data;
 }
-const asset=n=>`/${n}`;
+const asset=n=>{const s=String(n||'');return /^https?:\/\//i.test(s)||s.startsWith('/')?s:`/${s}`};
 function save(){try{localStorage.setItem('mirae-cart',JSON.stringify(state.cart));localStorage.setItem('mirae-wish',JSON.stringify(state.wish))}catch{}}
 function openModal(title,body,ready){lastFocus=document.activeElement;$('#modal-content').innerHTML=`<h2 id="modal-title">${title}</h2>${body}`;$('#overlay').hidden=false;document.body.classList.add('modal-open');ready?.();setTimeout(()=>$('#overlay .modal button,#overlay .modal input,#overlay .modal textarea')?.focus(),0)}
 function closeModal(){if($('#overlay').hidden)return;$('#overlay').hidden=true;document.body.classList.remove('modal-open');lastFocus?.focus?.()}
@@ -58,7 +58,7 @@ function cartCount(){return state.cart.reduce((n,x)=>n+x.qty,0)}
 function updateCart(){save();$('#cart-count').textContent=cartCount();$('#cart-items').innerHTML=state.cart.length?state.cart.map((x,line)=>{const p=products[x.i];return`<div class="cart-line"><span><b>${p[0]}</b><small>Size ${x.size} · ${p[1]}</small><span class="qty"><button data-qty="-1" data-line="${line}" aria-label="Decrease quantity">−</button><b>${x.qty}</b><button data-qty="1" data-line="${line}" aria-label="Increase quantity">+</button></span></span><button data-remove="${line}" aria-label="Remove ${p[0]}">×</button></div>`}).join(''):'<p>Your bag is empty.</p>';const total=state.cart.reduce((s,x)=>s+Number(products[x.i][1].replace(/[^0-9]/g,''))*x.qty,0);$('#cart-total').textContent=`₹${total.toLocaleString('en-IN')}`}
 function showCart(){$('#drawer').classList.add('open');updateCart()}
 function addToCart(i,size='M'){const existing=state.cart.find(x=>x.i===i&&x.size===size);if(existing)existing.qty++;else state.cart.push({i,size,qty:1});showCart()}
-function showProduct(i){const p=products[i];const slug=p[6]||encodeURIComponent(p[0].toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,''));const sizes=p[5].map(s=>'<option value="'+s+'">'+s+'</option>').join('');openModal(p[0],'<img class="modal-product-image" src="'+asset(p[3])+'" alt="'+p[0]+'"><p>'+p[4]+'</p><h3>'+p[1]+'</h3><p>Category: '+p[2]+'</p><label for="product-size"><b>Size</b></label><select id="product-size">'+sizes+'</select><button class="primary" data-modal-add="'+i+'">ADD TO BAG →</button><p><a class="text-button" href="/product.html?slug='+encodeURIComponent(slug)+'">VIEW FULL PRODUCT PAGE →</a></p>')}
+function showProduct(i){const p=products[i];const slug=p[7]||p[6]||encodeURIComponent(p[0].toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,''));const sizes=p[5].map(s=>'<option value="'+s+'">'+s+'</option>').join('');openModal(p[0],'<img class="modal-product-image" src="'+asset(p[3])+'" alt="'+p[0]+'"><p>'+p[4]+'</p><h3>'+p[1]+'</h3><p>Category: '+p[2]+'</p><label for="product-size"><b>Size</b></label><select id="product-size">'+sizes+'</select><button class="primary" data-modal-add="'+i+'">ADD TO BAG →</button><p><a class="text-button" href="/product.html?slug='+encodeURIComponent(slug)+'">VIEW FULL PRODUCT PAGE →</a></p>')}
 function showWishlist(){openModal('Your Wishlist',state.wish.map(i=>`<p><b>${products[i][0]}</b> — ${products[i][1]} <button data-product="${i}">View</button></p>`).join('')||'<p>Your wishlist is waiting for a little love ♡</p>')}
 function showSearch(){openModal('Find your style','<p>Search products by name or category.</p><label class="sr-only" for="search-input">Search products</label><input id="search-input" placeholder="Try linen, dresses or tops" autocomplete="off"><div id="search-results"></div>');const input=$('#search-input');const render=()=>{const q=input.value.toLowerCase();$('#search-results').innerHTML=products.map((p,i)=>({p,i})).filter(x=>`${x.p[0]} ${x.p[2]}`.toLowerCase().includes(q)).map(x=>`<p><button class="text-button" data-product="${x.i}">${x.p[0]} — ${x.p[1]}</button></p>`).join('')||'<p>No matching styles found.</p>'};input.addEventListener('input',render);render();input.focus()}
 async function showAccount(){
