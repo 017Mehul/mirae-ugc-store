@@ -31,10 +31,19 @@ module.exports = async function handler(req, res) {
     if (!status) return res.status(200).json({ ok:true, ignored:true });
 
     const db = getSupabaseAdmin();
-    const { error } = await db.from("orders").update({ status, razorpay_payment_id:payment.id }).eq("razorpay_order_id", razorpayOrderId);
+    const { data: order, error: orderError } = await db.from("orders").select("id,status,inventory_reserved").eq("razorpay_order_id",razorpayOrderId).maybeSingle();
+    if (orderError) throw orderError;
+    if (!order) return res.status(200).json({ ok:true, ignored:true });
+
+    const { error } = await db.from("orders").update({ status, razorpay_payment_id:payment.id }).eq("id", order.id);
     if (error) throw error;
+
+    if (status === "failed" && order.inventory_reserved) {
+      const { error: releaseError } = await db.rpc("release_order_inventory", { p_order_id: order.id });
+      if (releaseError) throw releaseError;
+    }
     return res.status(200).json({ ok:true });
-  } catch (error) {
+  } catch {
     return res.status(500).json({ error:"Webhook processing failed." });
   }
 };
