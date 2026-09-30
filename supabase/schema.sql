@@ -61,6 +61,9 @@ create table if not exists public.order_items (
   unit_price_inr integer not null check (unit_price_inr >= 0)
 );
 
+alter table public.orders add column if not exists inventory_reserved boolean not null default false;
+alter table public.orders add column if not exists reservation_expires_at timestamptz;
+
 alter table public.products enable row level security;
 alter table public.product_variants enable row level security;
 alter table public.newsletter_subscribers enable row level security;
