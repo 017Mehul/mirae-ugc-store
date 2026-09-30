@@ -86,3 +86,63 @@ revoke all on public.newsletter_subscribers from anon, authenticated;
 revoke all on public.contact_messages from anon, authenticated;
 revoke all on public.orders from anon, authenticated;
 revoke all on public.order_items from anon, authenticated;
+
+-- Atomic inventory reservation/release for concurrent checkout safety.
+create or replace function public.reserve_order_inventory(p_order_id uuid)
+returns void language plpgsql security definer set search_path = public as $$
+declare item record; current_stock integer;
+begin
+  for item in
+    select o.id from public.orders o
+    where o.status = 'pending' and o.inventory_reserved = true
+      and o.reservation_expires_at < now()
+    for update
+  loop
+    perform public.release_order_inventory(item.id);
+  end loop;
+
+  for item in
+    select oi.product_id, oi.size, oi.quantity
+    from public.order_items oi
+    where oi.order_id = p_order_id
+    order by oi.product_id, oi.size
+  loop
+    select stock into current_stock
+    from public.product_variants
+    where product_id = item.product_id and size = item.size
+    for update;
+    if current_stock is null or current_stock < item.quantity then
+      raise exception 'Insufficient inventory';
+    end if;
+    update public.product_variants
+    set stock = stock - item.quantity
+    where product_id = item.product_id and size = item.size;
+  end loop;
+
+  update public.orders
+  set inventory_reserved = true
+  where id = p_order_id;
+end;
+$$;
+
+create or replace function public.release_order_inventory(p_order_id uuid)
+returns void language plpgsql security definer set search_path = public as $$
+declare item record;
+begin
+  if not exists (select 1 from public.orders where id = p_order_id and inventory_reserved = true) then
+    return;
+  end if;
+  for item in
+    select oi.product_id, oi.size, oi.quantity
+    from public.order_items oi where oi.order_id = p_order_id
+  loop
+    update public.product_variants
+    set stock = stock + item.quantity
+    where product_id = item.product_id and size = item.size;
+  end loop;
+  update public.orders set inventory_reserved = false where id = p_order_id;
+end;
+$$;
+
+revoke all on function public.reserve_order_inventory(uuid) from public;
+revoke all on function public.release_order_inventory(uuid) from public;
