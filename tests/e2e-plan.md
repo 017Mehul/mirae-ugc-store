@@ -11,9 +11,9 @@ Run this against a configured deployment with test payment credentials.
 7. Submit newsletter form with a test address and verify one subscriber row.
 8. Submit contact form and verify one contact message row.
 9. Start checkout and verify the server recalculates the amount from database prices.
-10. Complete Razorpay test payment.
-11. Verify the order and order items are created only after verified payment.
-12. Refresh the account page and verify the order history is visible.
+10. Complete Razorpay test payment and verify the server-side payment signature.
+11. Verify the order, shipping address and order items are created and inventory is reserved only after checkout validation.
+12. Refresh the account page and verify the order history is visible; test sign-out and password reset.
 13. Test invalid quantity, invalid product ID and tampered price payloads.
 14. Test keyboard navigation, Escape handling, reduced-motion mode and screen-reader labels.
 15. Confirm no service-role or Razorpay secret is present in browser source.
