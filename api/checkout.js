@@ -20,6 +20,9 @@ module.exports = async function handler(req, res) {
       }
     }
 
+    const customerEmail = String(customerEmail || "").trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail)) return res.status(400).json({ error: "A valid email address is required." });
+
     const shipping = req.body?.shipping_address;
     if (!shipping || !shipping.name || !shipping.phone || !shipping.address || !shipping.city || !shipping.state || !shipping.pincode) {
       return res.status(400).json({ error: "Complete shipping details are required." });
@@ -76,6 +79,8 @@ module.exports = async function handler(req, res) {
 
     return res.status(200).json({ keyId:process.env.RAZORPAY_KEY_ID, orderId:order.id, amount, currency:"INR", localOrderId:dbOrder.id });
   } catch (error) {
-    return res.status(400).json({ error: error.message || "Unable to create checkout." });
+    const message = String(error?.message || "");
+    const clientSafe = /^(Your bag is empty|Invalid cart item|Invalid order amount|Complete shipping details|Enter a valid phone|One or more items went out of stock|Payment service is not configured|A valid email address)/.test(message) || / is unavailable in size /.test(message);
+    return res.status(clientSafe ? 400 : 503).json({ error: clientSafe ? message : "Checkout service is temporarily unavailable." });
   }
 };
