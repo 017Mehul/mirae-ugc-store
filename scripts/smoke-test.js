@@ -8,7 +8,7 @@ const required = [
   "product-1.jpg","product-2.jpg","product-3.jpg","product-4.jpg","product-5.jpg",
   "package.json",".env.example","vercel.json","supabase/schema.sql",
   "api/products.js","api/newsletter.js","api/contact.js","api/checkout.js",
-  "api/config.js","api/orders.js"
+  "api/config.js","api/orders.js","api/csrf.js","api/_lib/security.js","api/_lib/supabase.js"
 ];
 
 const missing = required.filter(file => !fs.existsSync(path.join(root, file)));
@@ -28,3 +28,9 @@ if (!app.includes("s.startsWith('/')")) throw new Error("Asset path normalizatio
 if (app.includes("RAZORPAY") || app.includes("razorpay")) throw new Error("Obsolete Razorpay client code remains");
 
 console.log("MIRAE production smoke checks passed.");
+
+if (!app.includes("persistSession:false")) throw new Error("Auth persistence must stay disabled");
+if (!app.includes("X-CSRF-Token")) throw new Error("CSRF header missing");
+if (!app.includes("escapeHTML")) throw new Error("DOM XSS escaping helper missing");
+if (app.includes("localStorage") && /auth-token|sb-[^'"]+auth-token/i.test(app)) throw new Error("Auth token persistence detected in localStorage");
+if (!fs.existsSync(path.join(root, "package-lock.json"))) console.warn("No package-lock.json: dependency tree is not lockfile-reproducible yet.");
