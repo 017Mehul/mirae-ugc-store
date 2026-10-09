@@ -4,6 +4,6 @@
   "version":"2.0.0",
   "description":"MIRAE portfolio storefront with Supabase-backed demo commerce.",
   "engines":{"node":">=20"},
-  "scripts":{"check":"node --check ugc/app.js && python scripts/smoke-test.py"},
+  "scripts":{"check":"node --check ugc/app.js && node scripts/smoke-test.js"},
   "dependencies":{"@supabase/supabase-js":"^2.57.0"}
 }
