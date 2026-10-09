@@ -1,7 +1,10 @@
 const { getSupabaseAdmin } = require("./_lib/supabase");
+const { enforceOrigin, enforceRateLimit } = require("./_lib/security");
 
 module.exports = async function handler(req, res) {
   if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed" });
+  if (!enforceOrigin(req, res)) return;
+  if (!enforceRateLimit(req, res, "products", 120, 60_000)) return;
   try {
     const db = getSupabaseAdmin();
     const { data, error } = await db.from("products")
