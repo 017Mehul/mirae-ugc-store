@@ -25,7 +25,10 @@ This is a portfolio/demo commerce experience. **No real payment is charged.** Ch
 - SEO metadata, canonical URL, Open Graph/Twitter metadata
 - Product structured data and favicon
 - Accessibility-focused labels, focus states, Escape handling and live regions
-- Security headers and Content Security Policy
+- Security headers and strict Content Security Policy
+- CSRF protection, origin validation and API rate limiting
+- DOM XSS output escaping and no persistent browser auth tokens
+- Database RLS with explicit least-privilege grants
 - GitHub Actions JavaScript/smoke checks
 
 ## 🏗️ Architecture
@@ -97,6 +100,7 @@ SUPABASE_SERVICE_ROLE_KEY=
 ```
 
 - Keep all three values in Vercel Environment Variables.
+- `APP_ORIGIN` may be set to the exact production origin; the backend defaults to `https://mirae.themglabs.com`.
 - The service-role key is server-only and must never be committed or exposed to browser code.
 - `.env.example` contains empty values only.
 
@@ -165,6 +169,9 @@ Checkout is a portfolio demo flow: the server reloads product/variant data, reca
 - Vercel security headers and CSP are configured in `vercel.json`.
 - Checkout validates products, variants, quantities and prices server-side.
 - No payment gateway secrets are used.
+- No file-upload endpoint or server-side URL fetcher exists, so there is currently no upload/SSRF attack surface in the app API.
+- No webhook endpoint exists, so there is no unsigned webhook path to secure.
+- No source-map files are committed.
 
 ## ⚠️ Portfolio limitations
 
@@ -246,7 +253,7 @@ Before calling the project complete, test the deployed storefront on desktop and
 
 ## Security notes
 
-The browser receives only the Supabase URL and publishable key. The service-role key is server-only.
+The browser receives only the Supabase URL and publishable key. Supabase Auth manages password hashing and JWT signing; this app does not implement custom password hashing or JWT secrets. Browser auth sessions are memory-only and are not persisted in localStorage. The service-role key is server-only.
 
 For this portfolio build, payment gateway code and payment secrets are intentionally not used.
 
