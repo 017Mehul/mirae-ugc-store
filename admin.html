@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="description" content="MIRAE administrator console">
+<title>MIRAE — Admin</title>
+<link rel="stylesheet" href="/admin.css">
+</head>
+<body>
+<main class="shell">
+<header class="topbar"><div><span class="eyebrow">MIRAE</span><h1>Commerce Console</h1></div><div class="actions"><button id="refresh">Refresh</button><button id="signout">Sign out</button></div></header>
+<section id="message" class="message" aria-live="polite"></section>
+<section id="stats" class="stats" aria-label="Store metrics"></section>
+<section class="panel"><div class="panel-head"><h2>Products & inventory</h2><span id="product-count"></span></div><div id="products" class="products"></div></section>
+<section class="panel"><div class="panel-head"><h2>Recent orders</h2><span>Latest 100</span></div><div class="table-wrap"><table><thead><tr><th>Order</th><th>Customer</th><th>Total</th><th>Status</th><th>Date</th></tr></thead><tbody id="orders"></tbody></table></div></section>
+</main>
+<script type="module" src="/admin.js"></script>
+</body>
+</html>
