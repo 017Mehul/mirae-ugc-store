@@ -60,7 +60,7 @@ Browser
 - Database/Auth: Supabase PostgreSQL + Supabase Auth
 - Deployment: Vercel
 - CI: GitHub Actions
-- Runtime: Node.js 20+
+- Runtime: Node.js 22+
 - External frontend dependency: Supabase JS via esm.sh
 
 ## 📁 Project structure
@@ -101,7 +101,7 @@ SUPABASE_SERVICE_ROLE_KEY=
 
 - Keep all three values in Vercel Environment Variables.
 - `APP_ORIGIN` may be set to the exact production origin; the backend defaults to `https://mirae.themglabs.com`.
-- The service-role key is server-only and must never be committed or exposed to browser code.
+- The service-role key is server-only and must never be committed or exposed to browser code.\n- MIRAE_ADMIN_USER_IDS is a comma-separated server-only allowlist of Supabase Auth user UUIDs permitted to use /admin.html and /api/admin.
 - `.env.example` contains empty values only.
 
 ## 🗄️ Supabase setup
@@ -171,7 +171,7 @@ Checkout is a portfolio demo flow: the server reloads product/variant data, reca
 - No payment gateway secrets are used.
 - No file-upload endpoint or server-side URL fetcher exists, so there is currently no upload/SSRF attack surface in the app API.
 - No webhook endpoint exists, so there is no unsigned webhook path to secure.
-- No source-map files are committed.
+- No source-map files are committed.\n- Admin mutations are server-authorized, CSRF-protected, MFA-aware and recorded in admin_audit_logs.\n\n## Admin console\n\nOpen /admin.html after signing into the storefront. Access is denied unless the authenticated Supabase user UUID is present in the server-only MIRAE_ADMIN_USER_IDS Vercel environment variable. The console supports product activation, price updates, per-size inventory updates, order status updates and basic commerce metrics. No admin secret is exposed to the browser.
 
 ## ⚠️ Portfolio limitations
 
