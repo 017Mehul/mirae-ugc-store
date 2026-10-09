@@ -1,8 +1,181 @@
 # MIRAE — Fashion & UGC Storefront
 
-A portfolio-grade fashion storefront deployed on Vercel with Supabase-backed products, authentication, inventory, demo checkout, order history, newsletter and contact capture.
+A portfolio-grade fashion storefront for **MIRAE**, built with vanilla HTML/CSS/JavaScript and backed by **Vercel Functions + Supabase**.
 
-## Customer experience
+## 🌐 Live demo
+
+**https://mirae.themglabs.com**
+
+This is a portfolio/demo commerce experience. **No real payment is charged.** Checkout creates a demo order and reserves inventory server-side.
+
+## ✨ Features
+
+- Responsive editorial fashion storefront
+- Product catalogue loaded from Supabase
+- Category browsing and client-side search
+- Product detail pages with deep links
+- Size selection and persistent shopping bag
+- Quantity controls and server-side price validation
+- Persistent wishlist
+- Supabase email authentication
+- Authenticated order history
+- Newsletter and contact persistence
+- Server-side product, variant and inventory validation
+- Demo checkout with database-backed inventory reservation
+- SEO metadata, canonical URL, Open Graph/Twitter metadata
+- Product structured data and favicon
+- Accessibility-focused labels, focus states, Escape handling and live regions
+- Security headers and Content Security Policy
+- GitHub Actions JavaScript/smoke checks
+
+## 🏗️ Architecture
+
+```text
+Browser
+  │
+  ├── index.html / product.html
+  ├── ugc/styles.css
+  └── ugc/app.js
+          │
+          ▼
+      Vercel /api/*
+          ├── config.js
+          ├── products.js
+          ├── newsletter.js
+          ├── contact.js
+          ├── checkout.js
+          └── orders.js
+                  │
+                  ▼
+            Supabase Auth + PostgreSQL
+```
+
+## 🧰 Tech stack
+
+- Frontend: HTML5, CSS3, Vanilla JavaScript
+- Backend: Vercel Serverless Functions
+- Database/Auth: Supabase PostgreSQL + Supabase Auth
+- Deployment: Vercel
+- CI: GitHub Actions
+- Runtime: Node.js 20+
+- External frontend dependency: Supabase JS via esm.sh
+
+## 📁 Project structure
+
+```text
+.
+├── index.html
+├── product.html
+├── ugc/
+│   ├── app.js
+│   └── styles.css
+├── api/
+│   ├── _lib/supabase.js
+│   ├── config.js
+│   ├── products.js
+│   ├── newsletter.js
+│   ├── contact.js
+│   ├── checkout.js
+│   └── orders.js
+├── supabase/schema.sql
+├── scripts/smoke-test.js
+├── tests/e2e-plan.md
+├── .github/workflows/storefront.yml
+├── .env.example
+├── vercel.json
+└── package.json
+```
+
+## 🔐 Environment variables
+
+The server requires:
+
+```env
+SUPABASE_URL=
+SUPABASE_PUBLISHABLE_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+```
+
+- Keep all three values in Vercel Environment Variables.
+- The service-role key is server-only and must never be committed or exposed to browser code.
+- `.env.example` contains empty values only.
+
+## 🗄️ Supabase setup
+
+1. Use the dedicated MIRAE Supabase project.
+2. Run `supabase/schema.sql`.
+3. Configure Supabase Auth email settings and the site's allowed redirect URL.
+4. Seed products and product variants/inventory.
+5. Add the three environment variables to Vercel.
+6. Redeploy and verify `/api/config` and `/api/products`.
+
+**Important:** `supabase/schema.sql` is intended for the dedicated MIRAE database only.
+
+## 💻 Local development
+
+There is no frontend bundler/build step.
+
+```bash
+python -m http.server 8000
+```
+
+For Node checks:
+
+```bash
+npm install
+npm run check
+```
+
+Local API functionality requires the Supabase environment variables and a Vercel-compatible runtime; the deployed Vercel environment is the reference production configuration.
+
+## 🚀 Deployment
+
+- Frontend/API: Vercel
+- Database/Auth: Supabase
+- Domain: `mirae.themglabs.com`
+
+A push to `main` triggers GitHub Actions checks. Vercel handles production deployment separately.
+
+## 🧪 Testing
+
+Run:
+
+```bash
+npm run check
+```
+
+CI verifies JavaScript syntax, required assets, critical storefront markers, product ID/slug mapping, asset-path normalization and removal of obsolete Razorpay client code.
+
+Manual E2E coverage is documented in [`tests/e2e-plan.md`](tests/e2e-plan.md), including authentication, wishlist, forms, checkout, inventory, order history, tampered payloads and accessibility.
+
+## 💳 Checkout model
+
+MIRAE intentionally does **not** use Razorpay or another real payment gateway.
+
+Checkout is a portfolio demo flow: the server reloads product/variant data, recalculates the total, reserves inventory through a protected Supabase function, creates a demo order, and returns the order result. No card/payment transaction is processed.
+
+## 🛡️ Security
+
+- Supabase Row Level Security is enabled on exposed tables.
+- Public users can read only active products/variants.
+- Users can read only their own orders/order items.
+- Public direct database writes are revoked for newsletter, contact, orders and order items.
+- Inventory mutation functions are restricted to `service_role`.
+- The service-role key is never sent to the browser.
+- Vercel security headers and CSP are configured in `vercel.json`.
+- Checkout validates products, variants, quantities and prices server-side.
+- No payment gateway secrets are used.
+
+## ⚠️ Portfolio limitations
+
+This is a **portfolio/demo storefront**, not a production retail operation. It intentionally does not include real payment processing, an admin dashboard, fulfilment/shipping integration, transactional email, reviews or a stock-management UI.
+
+## 👤 Author
+
+**Mehul Gupta**
+
+GitHub: https://github.com/017Mehul
+
 
 - Responsive editorial storefront
 - Category browsing and product search
