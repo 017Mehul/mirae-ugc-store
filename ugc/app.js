@@ -76,7 +76,7 @@ function showSearch(){openModal('Find your style','<p>Search products by name or
 async function showAccount(){
  const session=await currentSession();
  if(session){
-  openModal('Your MIRAE Account','<p>Signed in as <b>'+session.user.email+'</b>.</p><div id="account-orders"><p>Loading order history…</p></div><button class="primary" data-auth-logout>SIGN OUT</button><button class="text-button" data-auth-reset>RESET PASSWORD</button>');
+  openModal('Your MIRAE Account','<p>Signed in as <b>'+escapeHTML(session.user.email)+'</b>.</p><div id="account-orders"><p>Loading order history…</p></div><button class="primary" data-auth-logout>SIGN OUT</button><button class="text-button" data-auth-reset>RESET PASSWORD</button>');
   await renderOrders(session);
   return;
  }
