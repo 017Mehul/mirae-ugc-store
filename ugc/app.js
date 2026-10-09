@@ -92,6 +92,7 @@ async function requireMfaIfEnrolled(){
 async function showAccount(){
  const session=await currentSession();
  if(session){
+  if(!(await requireMfaIfEnrolled())) return;
   openModal('Your MIRAE Account','<p>Signed in as <b>'+escapeHTML(session.user.email)+'</b>.</p><div id="account-orders"><p>Loading order history…</p></div><button class="primary" data-auth-mfa>ENABLE 2FA</button><button class="text-button" data-auth-logout>SIGN OUT</button><button class="text-button" data-auth-reset>RESET PASSWORD</button>');
   await renderOrders(session);$('#overlay').querySelector('[data-auth-mfa]')?.addEventListener('click',showMfaEnroll);
   return;
