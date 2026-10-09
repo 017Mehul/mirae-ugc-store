@@ -79,14 +79,18 @@ drop policy if exists "Public can read active products" on public.products;
 create policy "Public can read active products" on public.products for select to anon, authenticated using (active = true);
 
 drop policy if exists "Public can read active variants" on public.product_variants;
+drop policy if exists "Public can read variants" on public.product_variants;
 create policy "Public can read active variants" on public.product_variants for select to anon, authenticated
 using (exists (select 1 from public.products p where p.id = product_id and p.active = true));
 
 drop policy if exists "Users can read own orders" on public.orders;
-create policy "Users can read own orders" on public.orders for select to authenticated using ((select auth.uid()) = user_id);
+drop policy if exists "Users read own orders" on public.orders;
+create policy "Users read own orders" on public.orders for select to authenticated
+using ((select auth.uid()) = user_id);
 
 drop policy if exists "Users can read own order items" on public.order_items;
-create policy "Users can read own order items" on public.order_items for select to authenticated
+drop policy if exists "Users read own order items" on public.order_items;
+create policy "Users read own order items" on public.order_items for select to authenticated
 using (exists (select 1 from public.orders o where o.id = order_id and o.user_id = (select auth.uid())));
 
 revoke all on public.newsletter_subscribers from anon, authenticated;
@@ -94,14 +98,23 @@ revoke all on public.contact_messages from anon, authenticated;
 revoke all on public.orders from anon, authenticated;
 revoke all on public.order_items from anon, authenticated;
 
+create index if not exists idx_orders_user_id_created_at on public.orders(user_id, created_at desc);
+create index if not exists idx_order_items_order_id on public.order_items(order_id);
+create index if not exists idx_order_items_product_id on public.order_items(product_id);
+
 create or replace function public.reserve_order_inventory(p_order_id uuid)
 returns void language plpgsql security definer set search_path = public as $$
-declare item record; current_stock integer;
+declare
+  item record;
+  current_stock integer;
 begin
+  if exists (select 1 from public.orders where id = p_order_id and inventory_reserved = true) then
+    return;
+  end if;
+
   for item in
     select o.id from public.orders o
-    where o.status = 'pending' and o.inventory_reserved = true
-      and o.reservation_expires_at < now()
+    where o.status = 'pending' and o.inventory_reserved = true and o.reservation_expires_at < now()
     for update
   loop
     perform public.release_order_inventory(item.id);
