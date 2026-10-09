@@ -1,7 +1,10 @@
 const { getSupabaseAdmin } = require("./_lib/supabase");
+const { enforceOrigin, enforceRateLimit, requireCsrf } = require("./_lib/security");
 
 module.exports = async function handler(req, res) {
   if (req.method !== "GET") return res.status(405).json({ error:"Method not allowed" });
+  if (!enforceOrigin(req, res)) return;
+  if (!enforceRateLimit(req, res, "orders", 60, 60_000)) return;
   const token = String(req.headers.authorization || "").replace(/^Bearer\s+/i,"");
   if (!token) return res.status(401).json({ error:"Authentication required." });
 
