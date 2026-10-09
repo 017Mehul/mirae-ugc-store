@@ -93,6 +93,8 @@ drop policy if exists "Users read own order items" on public.order_items;
 create policy "Users read own order items" on public.order_items for select to authenticated
 using (exists (select 1 from public.orders o where o.id = order_id and o.user_id = (select auth.uid())));
 
+revoke all on public.products from anon, authenticated;
+revoke all on public.product_variants from anon, authenticated;
 revoke all on public.newsletter_subscribers from anon, authenticated;
 revoke all on public.contact_messages from anon, authenticated;
 revoke all on public.orders from anon, authenticated;
@@ -163,3 +165,23 @@ revoke execute on function public.reserve_order_inventory(uuid) from public, ano
 revoke execute on function public.release_order_inventory(uuid) from public, anon, authenticated;
 grant execute on function public.reserve_order_inventory(uuid) to service_role;
 grant execute on function public.release_order_inventory(uuid) to service_role;
+
+
+-- Explicit deny policies document the intended zero direct-client-write model.
+drop policy if exists "No direct client access" on public.contact_messages;
+create policy "No direct client access" on public.contact_messages
+for all to anon, authenticated using (false) with check (false);
+drop policy if exists "No direct client access" on public.newsletter_subscribers;
+create policy "No direct client access" on public.newsletter_subscribers
+for all to anon, authenticated using (false) with check (false);
+
+-- Force RLS as defense in depth. Server-side service-role operations remain intentional.
+alter table public.products force row level security;
+alter table public.product_variants force row level security;
+alter table public.newsletter_subscribers force row level security;
+alter table public.contact_messages force row level security;
+alter table public.orders force row level security;
+alter table public.order_items force row level security;
+
+revoke all on schema public from anon, authenticated;
+grant usage on schema public to anon, authenticated;
