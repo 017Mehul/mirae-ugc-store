@@ -1,4 +1,4 @@
-const { getSupabaseAdmin } = require("./_lib/supabase");
+const { getSupabaseAdmin, requiresMfaAal2 } = require("./_lib/supabase");
 const { enforceOrigin, enforceRateLimit, requireCsrf } = require("./_lib/security");
 
 module.exports = async function handler(req, res) {
@@ -21,6 +21,9 @@ module.exports = async function handler(req, res) {
       if (auth.data?.user) {
         userId = auth.data.user.id;
         customerEmail = auth.data.user.email || customerEmail;
+        if (await requiresMfaAal2(db, userId, token)) {
+          return res.status(403).json({ error: "Complete two-factor authentication before checkout." });
+        }
       }
     }
 
