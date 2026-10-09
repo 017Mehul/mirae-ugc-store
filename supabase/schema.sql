@@ -218,3 +218,6 @@ alter table public.admin_audit_logs enable row level security;
 alter table public.admin_audit_logs force row level security;
 revoke all on public.admin_audit_logs from anon, authenticated;
 grant select, insert on public.admin_audit_logs to service_role;
+
+create policy "No direct client access" on public.admin_audit_logs for all to anon, authenticated using (false) with check (false);
+create index if not exists admin_audit_logs_actor_id_idx on public.admin_audit_logs(actor_id);
