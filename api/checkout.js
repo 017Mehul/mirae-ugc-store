@@ -1,7 +1,11 @@
 const { getSupabaseAdmin } = require("./_lib/supabase");
+const { enforceOrigin, enforceRateLimit, requireCsrf } = require("./_lib/security");
 
 module.exports = async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
+  if (!enforceOrigin(req, res)) return;
+  if (!enforceRateLimit(req, res, "api/checkout.js", 20, 10 * 60_000)) return;
+  if (!requireCsrf(req, res)) return;
 
   const items = Array.isArray(req.body?.items) ? req.body.items : [];
   if (!items.length) return res.status(400).json({ error: "Your bag is empty." });
