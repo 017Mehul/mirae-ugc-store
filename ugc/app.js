@@ -21,7 +21,7 @@ async function getSupabase(){
   const cfg=await fetch('/api/config').then(r=>r.ok?r.json():null);
   if(!cfg?.supabaseUrl||!cfg?.supabasePublishableKey)return null;
   const mod=await import('https://esm.sh/@supabase/supabase-js@2');
-  supabaseClient=mod.createClient(cfg.supabaseUrl,cfg.supabasePublishableKey);
+  supabaseClient=mod.createClient(cfg.supabaseUrl,cfg.supabasePublishableKey,{auth:{persistSession:false,autoRefreshToken:true,detectSessionInUrl:true}});
   return supabaseClient;
  }catch{return null}
 }
