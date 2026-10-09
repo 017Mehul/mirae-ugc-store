@@ -101,7 +101,11 @@ module.exports = async function handler(req, res) {
       payment_provider: "demo"
     }).eq("id", dbOrder.id);
 
-    if (paidError) throw paidError;
+    if (paidError) {
+      await db.rpc("release_order_inventory", { p_order_id: dbOrder.id });
+      await db.from("orders").update({ status: "failed", inventory_reserved: false }).eq("id", dbOrder.id);
+      throw paidError;
+    }
 
     return res.status(200).json({
       orderId: dbOrder.id,
