@@ -1,4 +1,4 @@
-const { getSupabaseAdmin } = require("./_lib/supabase");
+const { getSupabaseAdmin, requiresMfaAal2 } = require("./_lib/supabase");
 const { enforceOrigin, enforceRateLimit, requireCsrf } = require("./_lib/security");
 
 module.exports = async function handler(req, res) {
@@ -12,6 +12,7 @@ module.exports = async function handler(req, res) {
     const db = getSupabaseAdmin();
     const { data:{ user }, error:userError } = await db.auth.getUser(token);
     if (userError || !user) return res.status(401).json({ error:"Invalid session." });
+    if (await requiresMfaAal2(db, user.id, token)) return res.status(403).json({ error:"Complete two-factor authentication to access your orders." });
 
     const { data, error } = await db.from("orders")
       .select("id,status,total_inr,payment_provider,payment_id,created_at,order_items(size,quantity,unit_price_inr)")
