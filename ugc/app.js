@@ -1,4 +1,4 @@
-const $=s=>document.querySelector(s),$=s=>[...document.querySelectorAll(s)];
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const escapeHTML=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let csrfToken='';
 const categories=[['DRESSES','cat-dresses.jpg'],['TOPS','cat-tops.jpg'],['CO-ORD SETS','cat-coord.jpg'],['JACKETS','cat-jackets.jpg'],['ACCESSORIES','cat-accessories.jpg'],['LOUNGEWEAR','cat-lounge.jpg']];
