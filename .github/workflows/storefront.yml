@@ -26,7 +26,10 @@ jobs:
           node --check api/checkout.js
           node --check api/config.js
           node --check api/orders.js
+          node --check api/admin.js
           node --check api/_lib/supabase.js
+          node --check api/_lib/admin.js
+          node --check admin.js
           node --check scripts/smoke-test.js
       - name: Run storefront smoke test
         run: node scripts/smoke-test.js
