@@ -8,7 +8,7 @@ const articles=[['5 Ways to Style Linen This Summer','Simple styling ideas for b
 const heroSlides=[{title:'Confidence\\nLooks Good\\nOn You.',text:'Effortless styles for your everyday moments.',image:'/hero-photo.jpg'},{title:'Everyday\\nElegance.',text:'Timeless pieces designed for effortless styling.',image:'/editorial.jpg'},{title:'Wear Your\\nStory.',text:'Discover pieces that feel like you.',image:'/journal-1.jpg'}];
 const readJSON=(key,fallback)=>{try{const v=JSON.parse(localStorage.getItem(key)||'');return v??fallback}catch{return fallback}};
 const normalizeCart=items=>Array.isArray(items)?items.map(x=>typeof x==='number'?{i:x,size:'M',qty:1}:x).filter(x=>x&&Number.isInteger(x.i)&&x.i>=0&&x.i<products.length&&typeof x.size==='string'&&products[x.i][5].includes(x.size)&&Number.isInteger(x.qty)&&x.qty>0):[];
-const storedWish=readJSON('mirae-wish',[]);const state={cart:normalizeCart(readJSON('mirae-cart',[])),wish:Array.isArray(storedWish)?storedWish.filter(i=>Number.isInteger(i)&&i>=0&&i<products.length):[],filter:'all'};
+const savedCart=readJSON('mirae-cart',[]),savedWish=readJSON('mirae-wish',[]);const state={cart:[],wish:[],filter:'all'};
 let lastFocus=null;let supabaseClient=null;
 async function getSupabase(){
  if(supabaseClient)return supabaseClient;
@@ -34,11 +34,11 @@ async function loadProducts(){
   if(!Array.isArray(data.products))throw new Error('Invalid catalogue response');
   products=productionProducts(data.products);
   catalogueStatus=products.length?'ready':'empty';
-  state.cart=normalizeCart(state.cart);
-  state.wish=state.wish.filter(i=>i<products.length);
+  state.cart=normalizeCart(savedCart);
+  state.wish=Array.isArray(savedWish)?savedWish.filter(i=>Number.isInteger(i)&&i>=0&&i<products.length):[];
   renderProducts();updateCart();
  }catch{
-  products=[];state.cart=[];state.wish=[];catalogueStatus='unavailable';renderProducts();updateCart();
+  products=[];state.cart=[];state.wish=[];catalogueStatus='unavailable';renderProducts();$('#cart-count').textContent='0';$('#cart-items').innerHTML='';
  }
 }
 async function getCsrfToken(){
@@ -138,5 +138,5 @@ async function startCheckout(){
  });
 }
 $('#newsletter').addEventListener('submit',async e=>{e.preventDefault();const email=e.target.elements[0].value;try{await postJSON('/api/newsletter',{email});openModal('You’re on the list ♡','<p>Thank you for subscribing to MIRAE updates.</p>');e.target.reset()}catch(err){openModal('Subscription unavailable',`<p>${escapeHTML(err.message)}</p>`)}});
-function initStorefront(){renderCategories();renderProducts();updateCart();loadProducts()}
+function initStorefront(){renderCategories();renderProducts();$('#cart-count').textContent='0';loadProducts()}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initStorefront);else initStorefront();
