@@ -19,3 +19,11 @@ Run this against the configured deployment.
 15. Test invalid quantity, invalid product ID and tampered price payloads.
 16. Test keyboard navigation, Escape handling and screen-reader labels.
 17. Confirm no service-role key is present in browser source.
+
+18. Sign in with the allowlisted admin account and verify admin.html loads.
+19. Verify a non-allowlisted authenticated user receives 403 from /api/admin.
+20. Verify an admin without completed MFA receives 403 when MFA is enrolled.
+21. Update a product price/active state and confirm the storefront reflects it.
+22. Update variant stock and confirm checkout inventory validation uses the new value.
+23. Change an order through valid lifecycle states and verify audit log entries are created.
+24. Verify CSRF/origin failures cannot mutate admin data.
