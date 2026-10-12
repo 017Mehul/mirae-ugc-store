@@ -24,7 +24,8 @@ This is a portfolio/demo commerce experience. **No real payment is charged.** Ch
 - Demo checkout with database-backed inventory reservation
 - SEO metadata, canonical URL, Open Graph/Twitter metadata
 - Product structured data and favicon
-- Accessibility-focused labels, focus states, Escape handling and live regions
+- Accessibility-focused labels, visible focus states, keyboard/Escape handling and live regions
+- Admin console with product, inventory and order management
 - Security headers and strict Content Security Policy
 - CSRF protection, origin validation and API rate limiting
 - DOM XSS output escaping and no persistent browser auth tokens
@@ -69,10 +70,15 @@ Browser
 .
 ├── index.html
 ├── product.html
+├── admin.html
+├── admin.js
+├── admin.css
 ├── ugc/
 │   ├── app.js
 │   └── styles.css
 ├── api/
+│   ├── _lib/admin.js
+│   ├── _lib/security.js
 │   ├── _lib/supabase.js
 │   ├── config.js
 │   ├── products.js
@@ -175,97 +181,9 @@ Checkout is a portfolio demo flow: the server reloads product/variant data, reca
 
 ## ⚠️ Portfolio limitations
 
-This is a **portfolio/demo storefront**, not a production retail operation. It intentionally does not include real payment processing, an admin dashboard, fulfilment/shipping integration, transactional email, reviews or a stock-management UI.
+This is a **portfolio/demo storefront**, not a production retail operation. It intentionally does not include real payment processing, fulfilment/shipping integration, transactional email or globally shared rate limiting. The admin dashboard is implemented and protected server-side.
 
 ## 👤 Author
-
-**Mehul Gupta**
-
-GitHub: https://github.com/017Mehul
-
-
-- Responsive editorial storefront
-- Category browsing and product search
-- Wishlist and persistent shopping bag
-- Quantity and size selection
-- Deep-link product pages at `/product.html?slug=...`
-- Supabase email authentication
-- Authenticated order history
-- Newsletter and contact persistence
-- Server-side price, product and inventory validation
-- Portfolio demo checkout — **no real payment is charged**
-- SEO metadata, Product structured data and favicon
-- Accessibility-focused labels, focus states and keyboard dismissal
-
-## Architecture
-
-```
-Browser
-  ├── Static HTML/CSS/JS storefront
-  └── /api/*
-        ├── products.js
-        ├── config.js
-        ├── newsletter.js
-        ├── contact.js
-        ├── checkout.js
-        └── orders.js
-                 │
-                 └── Supabase Auth + Postgres
-```
-
-## Database
-
-The dedicated MIRAE Supabase project contains products, product variants/inventory, orders, order items, newsletter subscribers and contact messages. RLS is enabled on exposed tables and inventory mutation functions are restricted to server-side service-role execution.
-
-Run `supabase/schema.sql` only against the dedicated MIRAE project.
-
-## Environment
-
-Required server variables:
-
-- `SUPABASE_URL`
-- `SUPABASE_PUBLISHABLE_KEY`
-- `SUPABASE_SERVICE_ROLE_KEY`
-
-Never commit the service-role key. It must never appear in browser code.
-
-## Local development
-
-No frontend build step is required:
-
-    python -m http.server 8000
-
-For Node syntax/CI checks:
-
-    npm install
-
-    npm run check
-
-## CI
-
-GitHub Actions checks all active JavaScript API/frontend files, required production assets and storefront smoke markers.
-
-## Deployment
-
-The current site uses Vercel + Supabase. Product data is served from Supabase through the server API.
-
-Before calling the project complete, test the deployed storefront on desktop and mobile, verify authentication and demo checkout, and configure Supabase email policies/redirect URLs.
-
-## Security notes
-
-The browser receives only the Supabase URL and publishable key. Supabase Auth manages password hashing and JWT signing; this app does not implement custom password hashing or JWT secrets. Browser auth sessions are memory-only and are not persisted in localStorage. The service-role key is server-only.
-
-For this portfolio build, payment gateway code and payment secrets are intentionally not used.
-
-## E2E
-
-See `tests/e2e-plan.md`.
-
-## Tech stack
-
-HTML5 · CSS3 · Vanilla JavaScript · Vercel Functions · Supabase · GitHub Actions
-
-## Author
 
 **Mehul Gupta**
 
