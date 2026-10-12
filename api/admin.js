@@ -3,6 +3,7 @@ const { enforceOrigin, enforceRateLimit, requireCsrf } = require("./_lib/securit
 
 const PRODUCT_FIELDS = ["name","slug","description","price_inr","category","images","available_sizes","active"];
 const ORDER_STATUSES = new Set(["pending","paid","processing","shipped","delivered","cancelled"]);
+const ORDER_TRANSITIONS = {pending:new Set(["paid","cancelled"]),paid:new Set(["processing","cancelled"]),processing:new Set(["shipped","cancelled"]),shipped:new Set(["delivered"]),delivered:new Set([]),cancelled:new Set([])};
 
 function cleanProductPatch(input) {
   const out = {};
@@ -71,6 +72,9 @@ module.exports = async function handler(req, res) {
     if (type === "order") {
       const status = String(body.status || "");
       if (!ORDER_STATUSES.has(status)) return res.status(400).json({error:"Invalid order status."});
+      const current = await db.from("orders").select("id,status").eq("id",String(body.id)).single();
+      if (current.error || !current.data) return res.status(404).json({error:"Order not found."});
+      if (!ORDER_TRANSITIONS[current.data.status]?.has(status)) return res.status(409).json({error:`Invalid order transition: ${current.data.status} → ${status}.`});
       const { data, error } = await db.from("orders").update({status}).eq("id",String(body.id)).select("id,status,total_inr").single();
       if (error) throw error;
       await audit(db,user.id,"update","order",data.id,{status});
