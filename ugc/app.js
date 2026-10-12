@@ -1,14 +1,9 @@
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const escapeHTML=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let csrfToken='';
-const categories=[['DRESSES','cat-dresses.jpg'],['TOPS','cat-tops.jpg'],['CO-ORD SETS','cat-coord.jpg'],['JACKETS','cat-jackets.jpg'],['ACCESSORIES','cat-accessories.jpg'],['LOUNGEWEAR','cat-lounge.jpg']];
-let products=[
- ['Linen Maxi Dress','₹2,499','DRESSES','product-1.jpg','Lightweight linen with an effortless everyday silhouette.',['S','M','L','XL']],
- ['Floral Wrap Dress','₹2,499','DRESSES','product-2.jpg','A feminine floral wrap dress made for sunny days.',['S','M','L','XL']],
- ['Satin Cowl Top','₹1,499','TOPS','product-3.jpg','A fluid satin top with an elegant cowl neckline.',['S','M','L']],
- ['Pleated Midi Skirt','₹1,899','SKIRTS','product-4.jpg','A graceful pleated skirt that moves with you.',['S','M','L']],
- ['Linen Co-ord Set','₹2,799','CO-ORD SETS','product-5.jpg','A relaxed matching set for polished everyday dressing.',['S','M','L','XL']]
-];
+const categories=[['DRESSES','cat-dresses.jpg'],['TOPS','cat-tops.jpg'],['CO-ORD SETS','cat-coord.jpg'],['JACKETS','cat-jackets.jpg'],['SKIRTS','product-4.jpg'],['ACCESSORIES','cat-accessories.jpg'],['LOUNGEWEAR','cat-lounge.jpg']];
+let products=[];
+let catalogueStatus='loading';
 const articles=[['5 Ways to Style Linen This Summer','Simple styling ideas for breathable, timeless linen pieces.'],['Wardrobe Staples You Need','The versatile essentials that make getting dressed easier.'],['Neutral Tones, Endless Possibilities','Build a calm, coordinated wardrobe with neutral shades.']];
 const heroSlides=[{title:'Confidence\\nLooks Good\\nOn You.',text:'Effortless styles for your everyday moments.',image:'/hero-photo.jpg'},{title:'Everyday\\nElegance.',text:'Timeless pieces designed for effortless styling.',image:'/editorial.jpg'},{title:'Wear Your\\nStory.',text:'Discover pieces that feel like you.',image:'/journal-1.jpg'}];
 const readJSON=(key,fallback)=>{try{const v=JSON.parse(localStorage.getItem(key)||'');return v??fallback}catch{return fallback}};
@@ -31,17 +26,20 @@ const productionProducts=rows=>rows.map(p=>[
  Array.isArray(p.images)&&p.images[0]?p.images[0]: 'product-1.jpg', p.description||'', Array.isArray(p.available_sizes)&&p.available_sizes.length?p.available_sizes:['S','M','L'], p.id, p.slug || p.id
 ]);
 async function loadProducts(){
+ catalogueStatus='loading';renderProducts();
  try{
   const r=await fetch('/api/products',{headers:{Accept:'application/json'}});
-  if(!r.ok)return;
+  if(!r.ok)throw new Error('Catalogue request failed');
   const data=await r.json();
-  if(Array.isArray(data.products)&&data.products.length){
-   products=productionProducts(data.products);
-   state.cart=normalizeCart(state.cart);
-   state.wish=state.wish.filter(i=>i<products.length);
-   renderProducts();updateCart();
-  }
- }catch{}
+  if(!Array.isArray(data.products))throw new Error('Invalid catalogue response');
+  products=productionProducts(data.products);
+  catalogueStatus=products.length?'ready':'empty';
+  state.cart=normalizeCart(state.cart);
+  state.wish=state.wish.filter(i=>i<products.length);
+  renderProducts();updateCart();
+ }catch{
+  products=[];state.cart=[];state.wish=[];catalogueStatus='unavailable';renderProducts();updateCart();
+ }
 }
 async function getCsrfToken(){
  if(csrfToken)return csrfToken;
@@ -65,7 +63,7 @@ function save(){try{localStorage.setItem('mirae-cart',JSON.stringify(state.cart)
 function openModal(title,body,ready){lastFocus=document.activeElement;$('#modal-content').innerHTML=`<h2 id="modal-title">${escapeHTML(title)}</h2>${body}`;$('#overlay').hidden=false;document.body.classList.add('modal-open');ready?.();setTimeout(()=>$('#overlay .modal button,#overlay .modal input,#overlay .modal textarea')?.focus(),0)}
 function closeModal(){if($('#overlay').hidden)return;$('#overlay').hidden=true;document.body.classList.remove('modal-open');lastFocus?.focus?.()}
 function renderCategories(){const el=$('#categories');if(!el)return;el.innerHTML=categories.map(([n,img])=>`<div class="category-wrap"><button class="category" data-category="${escapeHTML(n)}" aria-label="Shop ${escapeHTML(n.toLowerCase())}"><img src="${escapeHTML(asset(img))}" alt="${escapeHTML(n)}" loading="lazy"></button><span>${escapeHTML(n)}</span></div>`).join('')}
-function renderProducts(){const rows=products.map((p,i)=>({p,i})).filter(x=>state.filter==='all'||x.p[2]===state.filter);$('#products').innerHTML=rows.map(({p,i})=>`<article class="product"><button class="heart" data-wish="${i}" aria-label="${state.wish.includes(i)?'Remove':'Add'} ${escapeHTML(p[0])} ${state.wish.includes(i)?'from':'to'} wishlist">${state.wish.includes(i)?'♥':'♡'}</button><button class="product-image" data-product="${i}" aria-label="View ${escapeHTML(p[0])}"><img src="${escapeHTML(asset(p[3]))}" alt="${escapeHTML(p[0])}" loading="lazy"></button><h3>${escapeHTML(p[0])}</h3><p class="price">${escapeHTML(p[1])}</p><div class="swatches" aria-hidden="true"><i></i><i></i><i></i></div><button class="primary" data-add="${i}">ADD TO BAG</button><button class="text-button" data-product="${i}">VIEW DETAILS</button></article>`).join('')||'<p>No pieces in this collection yet.</p>'}
+function renderProducts(){const el=$('#products');if(!el)return;if(catalogueStatus==='loading'){el.innerHTML='<p class="catalogue-message" role="status">Loading the latest MIRAE collection…</p>';return}if(catalogueStatus==='unavailable'){el.innerHTML='<div class="catalogue-message" role="alert"><h3>Our collection is temporarily unavailable.</h3><p>Please check your connection and try again.</p><button class="primary" data-action="retry-products">TRY AGAIN</button></div>';return}const rows=products.map((p,i)=>({p,i})).filter(x=>state.filter==='all'||x.p[2]===state.filter);el.innerHTML=rows.map(({p,i})=>`<article class="product"><button class="heart" data-wish="${i}" aria-label="${state.wish.includes(i)?'Remove':'Add'} ${escapeHTML(p[0])} ${state.wish.includes(i)?'from':'to'} wishlist">${state.wish.includes(i)?'♥':'♡'}</button><button class="product-image" data-product="${i}" aria-label="View ${escapeHTML(p[0])}"><img src="${escapeHTML(asset(p[3]))}" alt="${escapeHTML(p[0])}" loading="lazy"></button><h3>${escapeHTML(p[0])}</h3><p class="price">${escapeHTML(p[1])}</p><div class="swatches" aria-hidden="true"><i></i><i></i><i></i></div><button class="primary" data-add="${i}">ADD TO BAG</button><button class="text-button" data-product="${i}">VIEW DETAILS</button></article>`).join('')||(catalogueStatus==='empty'?'<p class="catalogue-message">New pieces are coming soon. Please check back shortly.</p>':'<p class="catalogue-message">No pieces in this collection yet.</p>')}
 function cartCount(){return state.cart.reduce((n,x)=>n+x.qty,0)}
 function updateCart(){save();$('#cart-count').textContent=cartCount();$('#cart-items').innerHTML=state.cart.length?state.cart.map((x,line)=>{const p=products[x.i];return`<div class="cart-line"><span><b>${escapeHTML(p[0])}</b><small>Size ${escapeHTML(x.size)} · ${escapeHTML(p[1])}</small><span class="qty"><button data-qty="-1" data-line="${line}" aria-label="Decrease quantity">−</button><b>${x.qty}</b><button data-qty="1" data-line="${line}" aria-label="Increase quantity">+</button></span></span><button data-remove="${line}" aria-label="Remove ${escapeHTML(p[0])}">×</button></div>`}).join(''):'<p>Your bag is empty.</p>';const total=state.cart.reduce((s,x)=>s+Number(products[x.i][1].replace(/[^0-9]/g,''))*x.qty,0);$('#cart-total').textContent=`₹${total.toLocaleString('en-IN')}`}
 function showCart(){$('#drawer').classList.add('open');updateCart()}
@@ -120,7 +118,7 @@ if(d.scroll){closeModal();document.querySelector(d.scroll)?.scrollIntoView({beha
 if(d.hero!==undefined){setHero(+d.hero);return}
 if(d.authLogout!==undefined){(async()=>{const sb=await getSupabase();if(sb)await sb.auth.signOut();closeModal();showAccount()})();return}
 if(d.authReset!==undefined){(async()=>{const sb=await getSupabase(),session=await currentSession();if(!sb||!session)return;const {error}=await sb.auth.resetPasswordForEmail(session.user.email,{redirectTo:location.origin});openModal('Password reset',error?'<p>'+escapeHTML(error.message)+'</p>':'<p>Password reset email sent.</p>')})();return}
-if(a==='categories')return showCategories();if(a==='search')return showSearch();if(a==='account')return showAccount();if(a==='wishlist')return showWishlist();if(a==='journal')return showJournal();if(a==='read')return showJournal(0);if(a==='contact')return showContact();if(a==='checkout')return startCheckout();if(a==='menu')return showMenu();if(a==='close')return closeModal();if(a==='cart')return showCart();if(a==='close-cart'){$('#drawer').classList.remove('open');return}});
+if(a==='retry-products')return loadProducts();if(a==='categories')return showCategories();if(a==='search')return showSearch();if(a==='account')return showAccount();if(a==='wishlist')return showWishlist();if(a==='journal')return showJournal();if(a==='read')return showJournal(0);if(a==='contact')return showContact();if(a==='checkout')return startCheckout();if(a==='menu')return showMenu();if(a==='close')return closeModal();if(a==='cart')return showCart();if(a==='close-cart'){$('#drawer').classList.remove('open');return}});
 $('#overlay').addEventListener('click',e=>{if(e.target===$('#overlay'))closeModal()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!$('#overlay').hidden)closeModal();else $('#drawer').classList.remove('open')}});
 async function startCheckout(){
