@@ -8,6 +8,10 @@ A portfolio-grade fashion storefront for **MIRAE**, built with vanilla HTML/CSS/
 
 This is a portfolio/demo commerce experience. **No real payment is charged.** Checkout creates a demo order and reserves inventory server-side.
 
+## 🖥️ Storefront preview
+
+![MIRAE storefront dashboard](assets/mirae-storefront.jpg)
+
 ## ✨ Features
 
 - Responsive editorial fashion storefront
@@ -73,6 +77,8 @@ Browser
 ├── admin.html
 ├── admin.js
 ├── admin.css
+├── assets/
+│   └── mirae-storefront.jpg
 ├── ugc/
 │   ├── app.js
 │   └── styles.css
@@ -103,11 +109,13 @@ The server requires:
 SUPABASE_URL=
 SUPABASE_PUBLISHABLE_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
+MIRAE_ADMIN_USER_IDS=
 ```
 
-- Keep all three values in Vercel Environment Variables.
+- Keep all values in Vercel Environment Variables.
 - `APP_ORIGIN` may be set to the exact production origin; the backend defaults to `https://mirae.themglabs.com`.
-- The service-role key is server-only and must never be committed or exposed to browser code.\n- MIRAE_ADMIN_USER_IDS is a comma-separated server-only allowlist of Supabase Auth user UUIDs permitted to use /admin.html and /api/admin.
+- The service-role key is server-only and must never be committed or exposed to browser code.
+- `MIRAE_ADMIN_USER_IDS` is a comma-separated server-only allowlist of Supabase Auth user UUIDs permitted to use `/admin.html` and `/api/admin`.
 - `.env.example` contains empty values only.
 
 ## 🗄️ Supabase setup
@@ -116,7 +124,7 @@ SUPABASE_SERVICE_ROLE_KEY=
 2. Run `supabase/schema.sql`.
 3. Configure Supabase Auth email settings and the site's allowed redirect URL.
 4. Seed products and product variants/inventory.
-5. Add the three environment variables to Vercel.
+5. Add the environment variables to Vercel.
 6. Redeploy and verify `/api/config` and `/api/products`.
 
 **Important:** `supabase/schema.sql` is intended for the dedicated MIRAE database only.
@@ -177,7 +185,14 @@ Checkout is a portfolio demo flow: the server reloads product/variant data, reca
 - No payment gateway secrets are used.
 - No file-upload endpoint or server-side URL fetcher exists, so there is currently no upload/SSRF attack surface in the app API.
 - No webhook endpoint exists, so there is no unsigned webhook path to secure.
-- No source-map files are committed.\n- Admin mutations are server-authorized, CSRF-protected, MFA-aware and recorded in admin_audit_logs.\n\n## Admin console\n\nOpen /admin.html after signing into the storefront. Access is denied unless the authenticated Supabase user UUID is present in the server-only MIRAE_ADMIN_USER_IDS Vercel environment variable. The console supports product activation, price updates, per-size inventory updates, order status updates and basic commerce metrics. No admin secret is exposed to the browser.
+- No source-map files are committed.
+- Admin mutations are server-authorized, CSRF-protected, MFA-aware and recorded in `admin_audit_logs`.
+
+## Admin console
+
+Open `/admin.html` after signing into the storefront. Access is denied unless the authenticated Supabase user UUID is present in the server-only `MIRAE_ADMIN_USER_IDS` Vercel environment variable.
+
+The console supports product activation, price updates, per-size inventory updates, order status updates and basic commerce metrics. No admin secret is exposed to the browser.
 
 ## ⚠️ Portfolio limitations
 
